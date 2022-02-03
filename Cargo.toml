@@ -1,0 +1,9 @@
+[package]
+name = "strofa"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+tui = "0.17.0"
+serde = { version = "1.0", features = ["derive"] }
+zmerald = { path="../zmerald" }
