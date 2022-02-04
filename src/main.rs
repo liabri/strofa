@@ -3,17 +3,21 @@ mod block;
 use std::{ io, thread, time::Duration };
 
 use tui::{
-    backend::CrosstermBackend,
-    widgets::{Widget, Block, Borders},
-    layout::{Layout, Constraint, Direction},
+    backend::{ Backend, CrosstermBackend },
+    widgets::{Widget, Borders},
+    layout::{ Layout, Constraint, Direction, Rect },
     Terminal
 };
 
 use crossterm::{
+    ExecutableCommand,
     event::{ self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode },
     execute,
     terminal::{ disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, SetTitle },
 };
+
+pub const SMALL_TERMINAL_WIDTH: u16 = 150;
+pub const SMALL_TERMINAL_HEIGHT: u16 = 45;
 
 fn main() -> Result<(), io::Error> {
     
@@ -21,13 +25,15 @@ fn main() -> Result<(), io::Error> {
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     enable_raw_mode()?;
 
-    let backend = CrosstermBackend::new(stdout);
-    backend.execute(SetTitle("strofa"))
+    let mut backend = CrosstermBackend::new(stdout);
+    backend.execute(SetTitle("strofa"));
 
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor();
 
-      let events = event::Events::new(user_config.behavior.tick_rate_milliseconds);
+    // let events = event::Events::new(user_config.behavior.tick_rate_milliseconds);
+
+    let state = State::default();
 
       loop {
         // Get the size of the screen on each loop to account for resize event
@@ -37,19 +43,26 @@ fn main() -> Result<(), io::Error> {
 
             }
 
-            terminal.draw(|mut f| match state.active_block {
+            terminal.draw(|f| match state.active_block {
                 // ActiveBlock::Error => ui::draw_error_screen(&mut f, &app),
                 _ => {
-                    // Responsive layout: new one kicks in at width 150 or higher
-                    if app.size.width >= SMALL_TERMINAL_WIDTH && !app.user_config.behavior.enforce_wide_search_bar {
+                    let margin = {
+                        if state.size.height > SMALL_TERMINAL_HEIGHT {
+                            1
+                        } else {
+                            0
+                        }
+                    };
+
+                    if state.size.width >= SMALL_TERMINAL_WIDTH {
                         let parent_layout = Layout::default()
                             .direction(Direction::Vertical)
                             .constraints([Constraint::Min(1), Constraint::Length(6)].as_ref())
                             .margin(margin)
                             .split(f.size());
 
-                            routes(f, state, parent_layout[0]);
-                            polybar(f, state, parent_layout[1]);
+                            // block::routes(f, state, parent_layout[0]);
+                            // block::polybar(f, state, parent_layout[1]);
                     } else {
                         let parent_layout = Layout::default()
                             .direction(Direction::Vertical)
@@ -59,20 +72,12 @@ fn main() -> Result<(), io::Error> {
                                 Constraint::Length(6),
                             ].as_ref()).margin(margin).split(f.size());
 
-                            search(f, state, parent_layout[0]);
-                            draw_routes(f, state, parent_layout[1]);
-                            playbar(f, state, parent_layout[2]);
+                            // block::search(f, state, parent_layout[0]);
+                            // block::draw_routes(f, state, parent_layout[1]);
+                            // block::playbar(f, state, parent_layout[2]);
                     }
                 }
             })?;
-
-        terminal.draw(|f| {
-            let size = f.size();
-            let block = Block::default()
-                .title("Library")
-                .borders(Borders::ALL);
-            f.render_widget(block, size);
-        })?;
 
             // match events.next()? {
             // event::Event::Input(key) => {
@@ -108,13 +113,22 @@ fn main() -> Result<(), io::Error> {
             // }
             // }
     }
-
-    Ok(())
 }
 
 pub struct State {
     pub active_block: StrofaBlock,
     pub hovered_block: StrofaBlock,
+    pub size: Rect,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            active_block: StrofaBlock::Home,
+            hovered_block: StrofaBlock::Library,
+            size: Rect::default()
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
