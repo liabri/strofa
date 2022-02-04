@@ -118,6 +118,23 @@ pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
     f.render_widget(input, layout_chunk);
 }
 
+pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+    let highlight_state = (
+        state.active_block == StrofaBlock::Library,
+        state.hovered_block == StrofaBlock::Library,
+    );
+
+    selectable_list(
+        f,
+        state,
+        layout_chunk,
+        "Library",
+        &LIBRARY_ENTRIES,
+        highlight_state,
+        Some(0)// Some(app.library.selected_index),
+    );
+}
+
 // generics
 
 fn selectable_list<B, S>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title: &str, items: &[S], highlight_state: (bool, bool), selected_index: Option<usize>) 
