@@ -1,3 +1,4 @@
+mod event;
 mod block;
 mod theme;
 use theme::Theme;
@@ -6,14 +7,14 @@ use std::{ io, thread, time::Duration };
 
 use tui::{
     backend::{ Backend, CrosstermBackend },
-    widgets::{Widget, Borders},
+    widgets::{ Widget, Borders },
     layout::{ Layout, Constraint, Direction, Rect },
     Terminal
 };
 
 use crossterm::{
     ExecutableCommand,
-    event::{ self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode },
+    event::{ DisableMouseCapture, EnableMouseCapture, Event, KeyCode },
     execute,
     terminal::{ disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, SetTitle },
 };
@@ -33,16 +34,13 @@ fn main() -> Result<(), io::Error> {
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor();
 
-    // let events = event::Events::new(user_config.behavior.tick_rate_milliseconds);
+    let events = event::Events::new(250);
 
-    let state = State::default();
+    let mut state = State::default();
 
       loop {
-        // Get the size of the screen on each loop to account for resize event
            if let Ok(size) = terminal.backend().size() {
-                // state.size = size;
-
-
+                state.size = size;
             }
 
             terminal.draw(|f| match state.active_block {
@@ -149,5 +147,3 @@ pub enum StrofaBlock {
   Artists,
   BasicView,
 }
-
-
