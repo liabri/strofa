@@ -1,4 +1,6 @@
 mod block;
+mod theme;
+use theme::Theme;
 
 use std::{ io, thread, time::Duration };
 
@@ -46,36 +48,26 @@ fn main() -> Result<(), io::Error> {
             terminal.draw(|f| match state.active_block {
                 // ActiveBlock::Error => ui::draw_error_screen(&mut f, &app),
                 _ => {
-                    let margin = {
-                        if state.size.height > SMALL_TERMINAL_HEIGHT {
-                            1
-                        } else {
-                            0
-                        }
+                    let margin = if state.size.height > SMALL_TERMINAL_HEIGHT {
+                        1
+                    } else {
+                        0
                     };
 
-                    if state.size.width >= SMALL_TERMINAL_WIDTH {
-                        let parent_layout = Layout::default()
-                            .direction(Direction::Vertical)
-                            .constraints([Constraint::Min(1), Constraint::Length(6)].as_ref())
-                            .margin(margin)
-                            .split(f.size());
-
-                            // block::routes(f, state, parent_layout[0]);
-                            // block::polybar(f, state, parent_layout[1]);
+                    let constraints = if state.size.width > SMALL_TERMINAL_WIDTH {
+                        vec![Constraint::Min(1), Constraint::Length(6)]
                     } else {
-                        let parent_layout = Layout::default()
-                            .direction(Direction::Vertical)
-                            .constraints([
-                                Constraint::Length(3),
-                                Constraint::Min(1),
-                                Constraint::Length(6),
-                            ].as_ref()).margin(margin).split(f.size());
+                        vec![Constraint::Length(3), Constraint::Min(1), Constraint::Length(6)]
+                    };
 
-                            // block::search(f, state, parent_layout[0]);
-                            // block::draw_routes(f, state, parent_layout[1]);
-                            // block::playbar(f, state, parent_layout[2]);
-                    }
+                    let parent_layout = Layout::default()
+                        .direction(Direction::Vertical)
+                        .constraints(constraints.as_ref())
+                        .margin(margin)
+                        .split(f.size());
+
+                    block::search(f, &state, parent_layout[0]);
+                    block::home(f, &state, parent_layout[1]);
                 }
             })?;
 
@@ -119,14 +111,16 @@ pub struct State {
     pub active_block: StrofaBlock,
     pub hovered_block: StrofaBlock,
     pub size: Rect,
+    pub theme: Theme,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
-            active_block: StrofaBlock::Home,
+            active_block: StrofaBlock::Empty,
             hovered_block: StrofaBlock::Library,
-            size: Rect::default()
+            size: Rect::default(),
+            theme: Theme::default()
         }
     }
 }
@@ -142,9 +136,9 @@ pub enum StrofaBlock {
   Error,
   HelpMenu,
   Home,
-  Input,
+  Search,
   Library,
-  MyPlaylists,
+  Playlists,
   Podcasts,
   EpisodeTable,
   RecentlyPlayed,
@@ -157,9 +151,3 @@ pub enum StrofaBlock {
 }
 
 
-pub const LIBRARY_OPTIONS: [&str; 4] = [
-    "Songs",
-    "Albums",
-    "Artists",
-    "Podcasts"
-];
