@@ -1,14 +1,39 @@
-use crate::{ State, StrofaBlock };
+use crate::state::State;
 use crate::theme::get_color;
 
 use tui::{
   backend::Backend,
-  layout::{Alignment, Constraint, Direction, Layout, Rect},
-  style::{Modifier, Style},
-  text::{Span, Spans, Text},
-  widgets::{Block, Borders, Clear, Gauge, List, ListItem, ListState, Paragraph, Row, Table, Wrap},
+  layout::{ Constraint, Direction, Layout, Rect },
+  style::{ Modifier, Style },
+  text::{ Span, Text },
+  widgets::{ Block, Borders, List, ListItem, ListState, Paragraph },
   Frame,
 };
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum StrofaBlock {
+    Analysis,
+    PlayBar,
+    AlbumTracks,
+    AlbumList,
+    ArtistBlock,
+    Empty,
+    Error,
+    HelpMenu,
+    Home,
+    Search,
+    Library,
+    Playlists,
+    Podcasts,
+    EpisodeTable,
+    RecentlyPlayed,
+    SearchResultBlock,
+    SelectDevice,
+    TrackTable,
+    MadeForYou,
+    Artists,
+    BasicView,
+}
 
 // pub fn routes<B>(f: &mut Frame<B>, app: &App, layout_chunk: Rect) where B: Backend {
 //     let chunks = Layout::default()
