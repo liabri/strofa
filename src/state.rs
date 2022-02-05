@@ -1,4 +1,4 @@
-use crate::block::{ StrofaBlock, MainBlock };
+use crate::block::{ Blocks, StrofaBlock, MainBlock };
 use crate::event::Key;
 use crate::theme::Theme;
 
@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use tui::layout::Rect;
 
 pub struct State {
+    pub blocks: Blocks,
     pub active_block: StrofaBlock,
     pub hovered_block: StrofaBlock,
     pub main_block: MainBlock,
@@ -21,9 +22,7 @@ impl Default for State {
             active_block: StrofaBlock::Empty,
             hovered_block: StrofaBlock::Library,
             main_block: MainBlock::Queue,
-            size: Rect::default(),
-            theme: Theme::default(),
-            keys: KeyBindings::default()
+            ..Self::default()
         }
     }
 }
