@@ -36,7 +36,22 @@ pub enum MainBlock {
 
 // specific blocks
 
-pub fn home<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+pub fn top<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+    let highlight_state = (
+        state.active_block == StrofaBlock::Search,
+        state.hovered_block == StrofaBlock::Search,
+    );
+
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
+        .split(layout_chunk);
+
+    search(f, state, chunks[0]);
+    sort(f, state, chunks[1]);
+}
+
+pub fn left<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -55,20 +70,20 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
         .split(layout_chunk);
 
-    home(f, state, chunks[0]);
+    left(f, state, chunks[0]);
 
 
     queue(f, state, chunks[1]); //temp
 
-    //instead of passing everything through `state` we can pass it through StrofaBlock(X) enum fields
-    match state.active_block {
-        // StrofaBlock::SearchResults => search_results(f, state, chunks[1]),
-        // StrofaBlock::Queue => queue(f, state, chunks[1]),
-        // StrofaBlock::Albums => albums(f, state, chunks[1]),
-        // StrofaBlock::Artists => artists(f, state, chunks[1]),
-        // StrofaBlock::Tracks => tracks(f, state, chunks[1]),
-        // StrofaBlock::Podcasts => podcasts(f, state, chunks[1]),
-        _ => {}
+    if let StrofaBlock::MainBlock(blk) = state.active_block {
+        match blk {
+            // MainBlock::SearchResults => search_results(f, state, chunks[1]),
+            // MainBlock::Queue => queue(f, state, chunks[1]),
+            // MainBlock::Albums => albums(f, state, chunks[1]),
+            // MainBlock::Artists => artists(f, state, chunks[1]),
+            // MainBlock::Tracks => tracks(f, state, chunks[1]),
+            // MainBlock::Podcasts => podcasts(f, state, chunks[1])
+        }
     }
 }
 
@@ -120,15 +135,9 @@ pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
         state.hovered_block == StrofaBlock::Search,
     );
 
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
-        .split(layout_chunk);
-
-
     let input_string: String = String::new();//app.input.iter().collect();
     let lines = Text::from((&input_string).as_str());
-    let input = Paragraph::new(lines).block(
+    let search = Paragraph::new(lines).block(
         Block::default()
             .borders(Borders::ALL)
             .title(Span::styled(
@@ -137,8 +146,14 @@ pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
             )).border_style(get_color(highlight_state, state.theme)),
     );
 
-    f.render_widget(input, chunks[0]);
+    f.render_widget(search, layout_chunk);
+}
 
+pub fn sort<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+    let highlight_state = (
+        state.active_block == StrofaBlock::Sort,
+        state.hovered_block == StrofaBlock::Sort,
+    );
 
     let block = Block::default()
         .title(Span::styled("Sort By", Style::default().fg(state.theme.text)))
@@ -150,7 +165,7 @@ pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
         .block(block)
         .style(get_color(highlight_state, state.theme));
 
-    f.render_widget(sort, chunks[1]);
+    f.render_widget(sort, layout_chunk);
 }
 
 pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
@@ -170,14 +185,13 @@ pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Ba
     );
 }
 
-pub fn draw_playbar<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage(50),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-        ].as_ref()).margin(1).split(layout_chunk);
+pub fn playbar<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+    let playback = Block::default()
+        .title(Span::styled("Playback", Style::default().fg(state.theme.text)))
+        .borders(Borders::ALL)
+        .border_style(get_color((false, false), state.theme));
+
+    f.render_widget(playback, layout_chunk);
 }
 
 // generics
