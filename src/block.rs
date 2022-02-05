@@ -276,9 +276,9 @@ impl StrofaBlock {
             StrofaBlock::Sort => {},
             StrofaBlock::Library => {
                 match key {
-                    Key::Up => {},
+                    Key::Up => state.blocks.library.index-=1,
                     Key::Left => {},
-                    Key::Down => {},
+                    Key::Down => state.blocks.library.index+=1,
                     Key::Right => {},
                     Key::Enter => {}
                     _ => {},
