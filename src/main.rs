@@ -19,9 +19,8 @@ use tui::{
 
 use crossterm::{
     ExecutableCommand,
-    event::EnableMouseCapture,
     execute,
-    terminal::{ enable_raw_mode, EnterAlternateScreen, SetTitle },
+    terminal::{ enable_raw_mode, disable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, SetTitle },
 };
 
 use futures_util::StreamExt;
@@ -34,58 +33,28 @@ pub const SMALL_TERMINAL_HEIGHT: u16 = 45;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
-    FmtSubscriber::builder()
-        .with_env_filter(EnvFilter::from_default_env())
-        .init();
+    // FmtSubscriber::builder()
+    //     .with_env_filter(EnvFilter::from_default_env())
+    //     .init();
 
     let connection = TcpStream::connect("localhost:6600").await?;
     // let connection = UnixSocket::connect("/run/user/1000/mpd").await?;
     let (client, mut state_changes) = Client::connect(connection).await?;
 
-    user_interface().await?;
 
-    // 'outer: loop {
-    //     match client.command(commands::CurrentSong).await? {
-    //         Some(song_in_queue) => {
-    //             println!(
-    //                 "\"{}\" by \"{}\"",
-    //                 song_in_queue.song.title().unwrap_or(""),
-    //                 song_in_queue.song.artists().join(", "),
-    //             );
-    //         }
-    //         None => println!("(none)"),
-    //     }
-
-    //     loop {
-    //         // wait for a state change notification in the player subsystem, which indicates a song
-    //         // change among other things
-    //         match state_changes.next().await.transpose()? {
-    //             None => break 'outer,             // connection was closed by the server
-    //             Some(Subsystem::Player) => break, // something relevant changed
-    //             Some(_) => continue,              // something changed but we don't care
-    //         }
-    //     }
-    // }
-
-    Ok(())
-}
-
-
-async fn user_interface() -> Result<()> {
     let mut stdout = std::io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    execute!(stdout, EnterAlternateScreen)?;
     enable_raw_mode()?;
 
-    let mut backend = CrosstermBackend::new(stdout);
+    let mut backend = CrosstermBackend::new(&stdout);
     backend.execute(SetTitle("strofa"))?;
 
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
+    let mut state = State::new(client);
     let events = event::Events::new();//std::pin::Pin::new(&mut event::Events::new());
     futures_util::pin_mut!(events);
-
-    let mut state = State::default();
 
     loop {
         if let Ok(size) = terminal.backend().size() {
@@ -124,9 +93,9 @@ async fn user_interface() -> Result<()> {
             Some(event::Event::Input(key)) => {
                 match key {
                     event::Key::Esc => state.active_block=StrofaBlock::Empty,
-                    event::Key::Ctrl('c') => break Ok(()),
+                    event::Key::Ctrl('c') => break,
 
-                    _ if &key==state.keys.get("jump_to_album")? => {}//handle_jump_to_album(state),
+                    // _ if &key==state.keys.get("jump_to_album")? => handle_jump_to_album(state),
                     // _ if &key==state.keys.get("jump_to_artist_album")? => handle_jump_to_artist_album(state),
                     // _ if &key==state.keys.get("jump_to_context")? => handle_jump_to_context(state),
                     // _ if &key==state.keys.get("manage_devices")? => state.dispatch(IoEvent::GetDevices),                
@@ -161,6 +130,16 @@ async fn user_interface() -> Result<()> {
             }
         
             Some(event::Event::Tick) => {
+
+                loop {
+                    println!("hello there pussy");
+
+                    match state_changes.next().await.transpose()? {
+                        None => {},//break 'outer,             // connection was closed by the server
+                        Some(Subsystem::Player) => { println!("pppppp"); break }, // something relevant changed
+                        Some(_) => continue,              // something changed but we don't care
+                    }
+                }
                 // if let Some(CurrentlyPlaybackContext {
                 //     item: Some(item),
                 //     progress_ms: Some(progress_ms),
@@ -194,4 +173,11 @@ async fn user_interface() -> Result<()> {
             None => {}
         }
     }
+
+    // close strofa
+    terminal.show_cursor()?;
+    disable_raw_mode()?;
+    execute!(&stdout, LeaveAlternateScreen)?;
+
+    Ok(())
 }

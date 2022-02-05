@@ -14,18 +14,20 @@ pub struct State {
     pub size: Rect,
     pub theme: Theme,
     pub keys: KeyBindings,
+    pub client: mpd_client::Client,
 }
 
-impl Default for State {
-    fn default() -> Self {
+impl State {
+    pub fn new(client: mpd_client::Client) -> Self {
         Self {
+            client,
             blocks: Blocks::default(),
             active_block: StrofaBlock::Empty,
             hovered_block: StrofaBlock::Library,
             main_block: MainBlock::Queue,
             size: Rect::default(),
             theme: Theme::default(),
-            keys: KeyBindings::default()
+            keys: KeyBindings::default(),
         }
     }
 }
