@@ -183,6 +183,13 @@ pub struct Search {
 
 impl Search {
     pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+
+
+
+
+
+
+
         let highlight_state = (
             state.active_block == StrofaBlock::Search,
             state.hovered_block == StrofaBlock::Search,
@@ -257,6 +264,10 @@ pub fn playbar<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: 
 
 
 
+pub struct Tracks {
+
+}
+
 pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
     let highlight_state = (
         state.active_block == StrofaBlock::MainBlock(state.main_block),
@@ -321,7 +332,7 @@ impl StrofaBlock {
 
                         state.main_block = main_block;
                         state.active_block = StrofaBlock::MainBlock(main_block);
-                        state.hovered_block = StrofaBlock::Empty;
+                        state.hovered_block = state.active_block;
                     }
                     _ => {},
                 }
@@ -358,7 +369,6 @@ impl StrofaBlock {
             },
 
             StrofaBlock::Library => {
-                println!("POPO");
                 match key {
                     Key::Up => state.hovered_block=StrofaBlock::Search,
                     Key::Down => state.hovered_block=StrofaBlock::Playlists,
@@ -391,7 +401,7 @@ impl StrofaBlock {
         match key {
             Key::Enter => { 
                 state.active_block=state.hovered_block;
-                state.hovered_block=StrofaBlock::Empty;
+                // state.hovered_block=StrofaBlock::Empty;
             },
             _ => {}
         }
