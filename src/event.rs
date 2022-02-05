@@ -68,12 +68,6 @@ impl From<event::KeyEvent> for Key {
             event::KeyEvent { code: event::KeyCode::Right, .. } => Key::Right,
             event::KeyEvent { code: event::KeyCode::Up, .. } => Key::Up,
             event::KeyEvent { code: event::KeyCode::Down, .. } => Key::Down,
-            // event::KeyEvent { code: event::KeyCode::Home, .. } => Key::Home,
-            // event::KeyEvent { code: event::KeyCode::End, .. } => Key::End,
-            // event::KeyEvent { code: event::KeyCode::PageUp, .. } => Key::PageUp,
-            // event::KeyEvent { code: event::KeyCode::PageDown, .. } => Key::PageDown,
-            // event::KeyEvent { code: event::KeyCode::Delete, .. } => Key::Delete,
-            // event::KeyEvent { code: event::KeyCode::Insert, .. } => Key::Ins,
             event::KeyEvent { code: event::KeyCode::Enter, .. } => Key::Enter,
             event::KeyEvent { code: event::KeyCode::Tab, .. } => Key::Tab,
 

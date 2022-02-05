@@ -29,37 +29,6 @@ pub enum StrofaBlock {
     Artists,
 }
 
-// pub fn routes<B>(f: &mut Frame<B>, app: &App, layout_chunk: Rect) where B: Backend {
-//     let chunks = Layout::default()
-//         .direction(Direction::Horizontal)
-//         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
-//         .split(layout_chunk);
-
-//     draw_user_block(f, app, chunks[0]);
-
-//     let current_route = app.get_current_route();
-
-//     match current_route.id {
-//         RouteId::Search => draw_search_results(f, app, chunks[1]),
-//         RouteId::TrackTable => draw_song_table(f, app, chunks[1]),
-//         RouteId::AlbumTracks => draw_album_table(f, app, chunks[1]),
-//         RouteId::RecentlyPlayed => draw_recently_played_table(f, app, chunks[1]),
-//         RouteId::Artist => draw_artist_albums(f, app, chunks[1]),
-//         RouteId::AlbumList => draw_album_list(f, app, chunks[1]),
-//         RouteId::PodcastEpisodes => draw_show_episodes(f, app, chunks[1]),
-//         RouteId::Home => draw_home(f, app, chunks[1]),
-//         RouteId::MadeForYou => draw_made_for_you(f, app, chunks[1]),
-//         RouteId::Artists => draw_artist_table(f, app, chunks[1]),
-//         RouteId::Podcasts => draw_podcast_table(f, app, chunks[1]),
-//         RouteId::Recommendations => draw_recommendations_table(f, app, chunks[1]),
-//         RouteId::Error => {} // This is handled as a "full screen" route in main.rs
-//         RouteId::SelectedDevice => {} // This is handled as a "full screen" route in main.rs
-//         RouteId::Analysis => {} // This is handled as a "full screen" route in main.rs
-//         RouteId::BasicView => {} // This is handled as a "full screen" route in main.rs
-//         RouteId::Dialog => {} // This is handled in the draw_dialog function in mod.rs
-//     };
-// }
-
 // specific blocks
 
 pub fn home<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
