@@ -15,7 +15,7 @@ pub enum StrofaBlock {
     Search, // top
     Library, // home
     Playlists, // home
-    PlayBar, // bottom
+    Playbar, // bottom
     Error, // popup 
     Empty, // misc
 
@@ -197,4 +197,26 @@ where B: Backend, S: std::convert::AsRef<str> {
         .highlight_style(get_color(highlight_state, state.theme).add_modifier(Modifier::BOLD));
 
     f.render_stateful_widget(list, layout_chunk, &mut list_state);
+}
+
+
+
+
+impl StrofaBlock {
+    pub fn handle(&self) {
+        match self {
+            StrofaBlock::Search => {},
+            StrofaBlock::Library => {},
+            StrofaBlock::Playlists => {},
+            StrofaBlock::Playbar => {},
+            StrofaBlock::Error => {},
+            StrofaBlock::Empty => {},
+            StrofaBlock::SearchResults => {},
+            StrofaBlock::Queue => {},
+            StrofaBlock::Albums => {},
+            StrofaBlock::Artists => {},
+            StrofaBlock::Podcasts => {},
+            StrofaBlock::Tracks => {}
+        }
+    }
 }
