@@ -13,6 +13,8 @@ use tui::{
 
 #[derive(Default)]
 pub struct Blocks {
+    search: Search,
+    sort: Sort,
     library: Library,
     playlists: Playlists,
 }
@@ -53,8 +55,8 @@ pub fn top<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Back
         .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
         .split(layout_chunk);
 
-    search(f, state, chunks[0]);
-    sort(f, state, chunks[1]);
+    state.blocks.search.render(f, state, chunks[0]);
+    state.blocks.sort.render(f, state, chunks[1]);
 }
 
 pub fn left<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
@@ -139,6 +141,8 @@ impl Library {
     }    
 }
 
+
+
 pub struct Playlists {
    pub entries: Vec<String>,
    pub index: usize 
@@ -172,43 +176,73 @@ impl Playlists {
     }    
 }
 
-pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let highlight_state = (
-        state.active_block == StrofaBlock::Search,
-        state.hovered_block == StrofaBlock::Search,
-    );
 
-    let input_string: String = String::new();//app.input.iter().collect();
-    let lines = Text::from((&input_string).as_str());
-    let search = Paragraph::new(lines).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title(Span::styled(
-                "Search",
-                get_color(highlight_state, state.theme),
-            )).border_style(get_color(highlight_state, state.theme)),
-    );
-
-    f.render_widget(search, layout_chunk);
+#[derive(Default)]
+pub struct Search {
+   pub query: String,
 }
 
-pub fn sort<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let highlight_state = (
-        state.active_block == StrofaBlock::Sort,
-        state.hovered_block == StrofaBlock::Sort,
-    );
+impl Search {
+    pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+        let highlight_state = (
+            state.active_block == StrofaBlock::Search,
+            state.hovered_block == StrofaBlock::Search,
+        );
 
-    let block = Block::default()
-        .title(Span::styled("Sort By", Style::default().fg(state.theme.text)))
-        .borders(Borders::ALL)
-        .border_style(get_color(highlight_state, state.theme));
+        let lines = Text::from((&self.query).as_str());
+        let search = Paragraph::new(lines).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(Span::styled(
+                    "Search",
+                    get_color(highlight_state, state.theme),
+                )).border_style(get_color(highlight_state, state.theme)),
+        );
 
-    let lines = Text::from("Language");
-    let sort = Paragraph::new(lines)
-        .block(block)
-        .style(get_color(highlight_state, state.theme));
+        f.render_widget(search, layout_chunk);
+    }    
+}
 
-    f.render_widget(sort, layout_chunk);
+
+
+pub struct Sort {
+   pub entries: [&'static str; 2],
+   pub asc: bool,
+   pub index: usize 
+}
+
+impl Default for Sort {
+    fn default() -> Self {
+        Self {
+            entries: [
+                "Date of Release",
+                "Language",
+            ],
+            asc: true,
+            index: 0,
+        }        
+    }
+}
+
+impl Sort {
+    pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+        let highlight_state = (
+            state.active_block == StrofaBlock::Sort,
+            state.hovered_block == StrofaBlock::Sort,
+        );
+
+        let block = Block::default()
+            .title(Span::styled("Sort By", Style::default().fg(state.theme.text)))
+            .borders(Borders::ALL)
+            .border_style(get_color(highlight_state, state.theme));
+
+        let lines = Text::from(self.entries[0]);
+        let sort = Paragraph::new(lines)
+            .block(block)
+            .style(get_color(highlight_state, state.theme));
+
+        f.render_widget(sort, layout_chunk);
+    }
 }
 
 pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
