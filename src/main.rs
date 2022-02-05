@@ -147,30 +147,7 @@ async fn user_interface() -> Result<()> {
                         // _ if &key==state.keys.get("basic_view")? => state.push_navigation_stack(RouteId::BasicView, StrofaBlock::BasicView),
                     
                         // block events 
-                        _ => {
-                            println!("poop");
-                            // match state.active_block {
-                            //     StrofaBlock::Analysis => analysis::handler(key, app),
-                            //     StrofaBlock::ArtistBlock => artist::handler(key, app),
-                            //     StrofaBlock::Search => search::handler(key, app),
-                            //     StrofaBlock::MyPlaylists => playlist::handler(key, app),
-                            //     StrofaBlock::TrackTable => track_table::handler(key, app),
-                            //     StrofaBlock::EpisodeTable => episode_table::handler(key, app),
-                            //     StrofaBlock::HelpMenu => help_menu::handler(key, app),
-                            //     StrofaBlock::Error => error_screen::handler(key, app),
-                            //     StrofaBlock::SelectDevice => select_device::handler(key, app),
-                            //     StrofaBlock::SearchResultBlock => search_results::handler(key, app),
-                            //     StrofaBlock::AlbumList => album_list::handler(key, app),
-                            //     StrofaBlock::AlbumTracks => album_tracks::handler(key, app),
-                            //     StrofaBlock::Library => library::handler(key, app),
-                            //     StrofaBlock::Empty => empty::handler(key, app),
-                            //     StrofaBlock::Artists => artists::handler(key, app),
-                            //     StrofaBlock::Podcasts => podcasts::handler(key, app),
-                            //     StrofaBlock::PlayBar => playbar::handler(key, app),
-                            //     StrofaBlock::BasicView => basic_view::handler(key, app),
-                            //     StrofaBlock::Dialog(_) => dialog::handler(key, app)
-                            // }
-                        }
+                        _ => state.active_block.handle(),
                     }
                 }
             

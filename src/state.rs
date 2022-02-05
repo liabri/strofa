@@ -37,7 +37,7 @@ impl Default for KeyBindings {
     fn default() -> Self {
         let mut map: HashMap<String, Key> = HashMap::new();
 
-        // map.insert("back".to_string(), Key::Char('BACKSPACE'));
+        map.insert("back".to_string(), Key::Backspace);
         map.insert("to_queue".to_string(), Key::Char('q'));
         map.insert("to_playlists".to_string(), Key::Char('e'));
 
