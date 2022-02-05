@@ -12,21 +12,20 @@ use tui::{
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum StrofaBlock {
-    PlayBar,
-    AlbumTracks,
-    AlbumList,
-    ArtistBlock,
-    Empty,
-    Error,
-    HelpMenu,
-    Search,
-    Library,
-    Playlists,
-    Podcasts,
+    Search, // top
+    Library, // home
+    Playlists, // home
+    PlayBar, // bottom
+    Error, // popup 
+    Empty, // misc
+
+    // centre 
+    SearchResults,
     Queue,
-    SearchResultBlock,
-    TrackList,
+    Albums,
     Artists,
+    Podcasts,
+    Tracks,
 }
 
 // specific blocks
@@ -35,7 +34,6 @@ pub fn home<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Bac
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3), 
             Constraint::Percentage(30), 
             Constraint::Percentage(70)
         ].as_ref())
@@ -53,14 +51,15 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
 
     home(f, state, chunks[0]);
 
-    match state.active_block {
-        StrofaBlock::Queue => {},
-        StrofaBlock::AlbumTracks => {},
-        StrofaBlock::AlbumList => {},
-        StrofaBlock::ArtistBlock => {},
-        StrofaBlock::SearchResultBlock => {},
-        StrofaBlock::TrackList => {},
 
+queue(f, state, chunks[1]);
+    match state.active_block {
+        // StrofaBlock::SearchResults => search_results(f, state, chunks[1]),
+        // StrofaBlock::Queue => queue(f, state, chunks[1]),
+        // StrofaBlock::Albums => albums(f, state, chunks[1]),
+        // StrofaBlock::Artists => artists(f, state, chunks[1]),
+        // StrofaBlock::Tracks => tracks(f, state, chunks[1]),
+        // StrofaBlock::Podcasts => podcasts(f, state, chunks[1]),
         _ => {}
     }
 }
@@ -100,7 +99,7 @@ pub fn playlists<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B
         state,
         layout_chunk,
         "Playlists",
-        &LIBRARY_ENTRIES,
+        &["pop"],
         highlight_state,
         Some(0)// Some(app.library.selected_index),
     );
@@ -133,15 +132,15 @@ pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
 
 pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
     let highlight_state = (
-        state.active_block == StrofaBlock::Library,
-        state.hovered_block == StrofaBlock::Library,
+        state.active_block == StrofaBlock::Queue,
+        state.hovered_block == StrofaBlock::Queue,
     );
 
     selectable_list(
         f,
         state,
         layout_chunk,
-        "Library",
+        "Queue",
         &LIBRARY_ENTRIES,
         highlight_state,
         Some(0)// Some(app.library.selected_index),
