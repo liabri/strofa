@@ -3,29 +3,46 @@ use crossterm::event;
 
 #[derive(Debug, Clone, Copy)]
 pub struct EventConfig {
-    pub exit_key: Key,
     pub tick_rate: Duration,
 }
 
 impl Default for EventConfig {
     fn default() -> EventConfig {
         EventConfig {
-            exit_key: Key::Ctrl('c'),
             tick_rate: Duration::from_millis(250),
         }
     }
 }
 
-pub enum Event<I> {
-    Input(I),
+pub enum Event {
+    Input(Key),
     Tick
 }
 
-pub struct Events {
-    rx: mpsc::Receiver<Event<Key>>,
-    _tx: mpsc::Sender<Event<Key>>
+pub struct Events;
+
+use futures_util::Stream;
+use async_stream::stream;
+
+impl Events {
+    pub fn new() -> impl Stream<Item = Event> {
+        stream! {
+            loop {
+                if let event::Event::Key(key) = event::read().unwrap() {
+                    let key = Key::from(key);
+                    yield Event::Input(key);
+                } else {
+                    yield Event::Tick
+                }
+            }
+        }
+    }
 }
 
+// pub struct Events {
+//     rx: mpsc::Receiver<Event<Key>>,
+//     _tx: mpsc::Sender<Event<Key>>
+// }
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum Key {
@@ -80,36 +97,42 @@ impl From<event::KeyEvent> for Key {
     }
 }
 
-impl Events {
-    pub fn new() -> Events {
-        Events::with_config(EventConfig::default())
-    }
 
-    pub fn with_config(config: EventConfig) -> Events {
-        let (tx, rx) = mpsc::channel();
 
-        let event_tx = tx.clone();
-        thread::spawn(move || {
-            loop {
-                if event::poll(config.tick_rate).unwrap() {
-                    if let event::Event::Key(key) = event::read().unwrap() {
-                        let key = Key::from(key);
 
-                        //doesnt work
-                        if key==config.exit_key {
-                            std::process::exit(0x0100);
-                        }
 
-                        event_tx.send(Event::Input(key)).unwrap();
-                    }
-                }
 
-                event_tx.send(Event::Tick).unwrap();
-            }
-        });
 
-        Events { rx, _tx: tx }
-    }
 
-    pub fn next(&self) -> Result<Event<Key>, mpsc::RecvError> { self.rx.recv() }
-}
+
+
+
+
+
+// impl Events {
+//     pub fn new() -> Events {
+//         Events::with_config(EventConfig::default())
+//     }
+
+//     pub fn with_config(config: EventConfig) -> Events {
+//         let (tx, rx) = mpsc::channel();
+
+//         let event_tx = tx.clone();
+//         thread::spawn(move || {
+//             loop {
+//                 if event::poll(config.tick_rate).unwrap() {
+//                     if let event::Event::Key(key) = event::read().unwrap() {
+//                         let key = Key::from(key);
+//                         event_tx.send(Event::Input(key)).unwrap();
+//                     }
+//                 }
+
+//                 event_tx.send(Event::Tick).unwrap();
+//             }
+//         });
+
+//         Events { rx, _tx: tx }
+//     }
+
+//     pub fn next(&self) -> Result<Event<Key>, mpsc::RecvError> { self.rx.recv() }
+// }

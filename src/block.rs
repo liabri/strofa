@@ -66,8 +66,8 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
     }
 }
 
-pub const LIBRARY_ENTRIES: [&str; 4] = [
-    "Queue"
+pub const LIBRARY_ENTRIES: [&str; 5] = [
+    "Queue",
     "Tracks",
     "Albums",
     "Artists",
@@ -172,123 +172,6 @@ pub fn draw_playbar<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) wher
             Constraint::Percentage(25),
             Constraint::Percentage(25),
         ].as_ref()).margin(1).split(layout_chunk);
-
-// If no track is playing, render paragraph showing which device is selected, if no selected
-// give hint to choose a device
-if let Some(current_playback_context) = &app.current_playback_context {
-if let Some(track_item) = &current_playback_context.item {
-    let play_title = if current_playback_context.is_playing {
-    "Playing"
-    } else {
-    "Paused"
-    };
-
-let shuffle_text = if current_playback_context.shuffle_state {
-"On"
-} else {
-"Off"
-};
-
-let repeat_text = match current_playback_context.repeat_state {
-RepeatState::Off => "Off",
-RepeatState::Track => "Track",
-RepeatState::Context => "All",
-};
-
-let title = format!(
-"{:-7} ({} | Shuffle: {:-3} | Repeat: {:-5} | Volume: {:-2}%)",
-play_title,
-current_playback_context.device.name,
-shuffle_text,
-repeat_text,
-current_playback_context.device.volume_percent
-);
-
-let current_route = app.get_current_route();
-let highlight_state = (
-current_route.active_block == ActiveBlock::PlayBar,
-current_route.hovered_block == ActiveBlock::PlayBar,
-);
-
-let title_block = Block::default()
-.borders(Borders::ALL)
-.title(Span::styled(
-&title,
-get_color(highlight_state, app.user_config.theme),
-))
-.border_style(get_color(highlight_state, app.user_config.theme));
-
-f.render_widget(title_block, layout_chunk);
-
-let (item_id, name, duration_ms) = match track_item {
-PlayingItem::Track(track) => (
-track.id.to_owned().unwrap_or_else(|| "".to_string()),
-track.name.to_owned(),
-track.duration_ms,
-),
-PlayingItem::Episode(episode) => (
-episode.id.to_owned(),
-episode.name.to_owned(),
-episode.duration_ms,
-),
-};
-
-let track_name = if app.liked_song_ids_set.contains(&item_id) {
-format!("{}{}", &app.user_config.padded_liked_icon(), name)
-} else {
-name
-};
-
-let play_bar_text = match track_item {
-PlayingItem::Track(track) => create_artist_string(&track.artists),
-PlayingItem::Episode(episode) => format!("{} - {}", episode.name, episode.show.name),
-};
-
-let lines = Text::from(Span::styled(
-play_bar_text,
-Style::default().fg(app.user_config.theme.playbar_text),
-));
-
-let artist = Paragraph::new(lines)
-.style(Style::default().fg(app.user_config.theme.playbar_text))
-.block(
-Block::default().title(Span::styled(
-&track_name,
-Style::default()
-  .fg(app.user_config.theme.selected)
-  .add_modifier(Modifier::BOLD),
-)),
-);
-f.render_widget(artist, chunks[0]);
-
-let progress_ms = match app.seek_ms {
-Some(seek_ms) => seek_ms,
-None => app.song_progress_ms,
-};
-
-let perc = get_track_progress_percentage(progress_ms, duration_ms);
-
-let song_progress_label = display_track_progress(progress_ms, duration_ms);
-let modifier = if app.user_config.behavior.enable_text_emphasis {
-Modifier::ITALIC | Modifier::BOLD
-} else {
-Modifier::empty()
-};
-let song_progress = Gauge::default()
-.gauge_style(
-Style::default()
-.fg(app.user_config.theme.playbar_progress)
-.bg(app.user_config.theme.playbar_background)
-.add_modifier(modifier),
-)
-.percent(perc)
-.label(Span::styled(
-&song_progress_label,
-Style::default().fg(app.user_config.theme.playbar_progress_text),
-));
-f.render_widget(song_progress, chunks[2]);
-}
-}
 }
 
 // generics
