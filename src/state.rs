@@ -37,32 +37,35 @@ impl Default for KeyBindings {
     fn default() -> Self {
         let mut map: HashMap<String, Key> = HashMap::new();
 
-        map.insert("back".to_string(), Key::Char('q'));
+        // map.insert("back".to_string(), Key::Char('BACKSPACE'));
+        map.insert("to_queue".to_string(), Key::Char('q'));
+        map.insert("to_playlists".to_string(), Key::Char('e'));
+
         map.insert("next_page".to_string(), Key::Ctrl('d'));
-        map.insert("previous_page".to_string(), Key::Ctrl('u'));
-        map.insert("jump_to_start".to_string(), Key::Ctrl('a'));
-        map.insert("jump_to_end".to_string(), Key::Ctrl('e'));
-        map.insert("jump_to_album".to_string(), Key::Char('a'));
-        map.insert("jump_to_artist_album".to_string(), Key::Char('A'));
+        map.insert("previous_page".to_string(), Key::Ctrl('a'));
+
+        map.insert("jump_to_start".to_string(), Key::Ctrl('f'));
+        map.insert("jump_to_end".to_string(), Key::Ctrl('g'));
+        map.insert("jump_to_album".to_string(), Key::Char('t'));
+        map.insert("jump_to_artist_album".to_string(), Key::Char('y'));
         map.insert("jump_to_context".to_string(), Key::Char('o'));
-        map.insert("manage_devices".to_string(), Key::Char('d'));
+
         map.insert("decrease_volume".to_string(), Key::Char('-'));
         map.insert("increase_volume".to_string(), Key::Char('+'));
         map.insert("toggle_playback".to_string(), Key::Char(' '));
         map.insert("seek_backwards".to_string(), Key::Char('<'));
         map.insert("seek_forwards".to_string(), Key::Char('>'));
-        map.insert("next_track".to_string(), Key::Char('n'));
-        map.insert("previous_track".to_string(), Key::Char('p'));
-        map.insert("help".to_string(), Key::Char('?'));
+        map.insert("next_track".to_string(), Key::Char(']'));
+        map.insert("previous_track".to_string(), Key::Char('['));
         map.insert("shuffle".to_string(), Key::Ctrl('s'));
         map.insert("repeat".to_string(), Key::Ctrl('r'));
         map.insert("search".to_string(), Key::Char('/'));
         map.insert("submit".to_string(), Key::Enter);
-        map.insert("copy_song_url".to_string(), Key::Char('c'));
-        map.insert("copy_album_url".to_string(), Key::Char('C'));
-        map.insert("audio_analysis".to_string(), Key::Char('v'));
+
+        map.insert("copy_song_name".to_string(), Key::Char('c'));
+        map.insert("copy_album_name".to_string(), Key::Char('C'));
         map.insert("basic_view".to_string(), Key::Char('B'));
-        map.insert("add_item_to_queue".to_string(), Key::Char('z'));
+        map.insert("add_item_to_queue".to_string(), Key::Char('x'));
 
         Self(map)
     }
