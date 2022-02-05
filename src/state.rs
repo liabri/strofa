@@ -1,4 +1,4 @@
-use crate::block::StrofaBlock;
+use crate::block::{ StrofaBlock, MainBlock };
 use crate::event::Key;
 use crate::theme::Theme;
 
@@ -9,6 +9,7 @@ use tui::layout::Rect;
 pub struct State {
     pub active_block: StrofaBlock,
     pub hovered_block: StrofaBlock,
+    pub main_block: MainBlock,
     pub size: Rect,
     pub theme: Theme,
     pub keys: KeyBindings,
@@ -19,6 +20,7 @@ impl Default for State {
         Self {
             active_block: StrofaBlock::Empty,
             hovered_block: StrofaBlock::Library,
+            main_block: MainBlock::Queue,
             size: Rect::default(),
             theme: Theme::default(),
             keys: KeyBindings::default()
