@@ -190,6 +190,4 @@ async fn user_interface() -> Result<()> {
             }
         }
     }
-
-    Ok(())
 }

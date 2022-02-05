@@ -14,6 +14,7 @@ use tui::{
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum StrofaBlock {
     Search, // top
+    Sort, // top
     Library, // home
     Playlists, // home
     Playbar, // bottom
@@ -154,8 +155,8 @@ pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
 
 pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
     let highlight_state = (
-        state.active_block == StrofaBlock::MainBlock(MainBlock::Queue),
-        state.hovered_block == StrofaBlock::MainBlock(MainBlock::Queue),
+        state.active_block == StrofaBlock::MainBlock(state.main_block),
+        state.hovered_block == StrofaBlock::MainBlock(state.main_block),
     );
 
     selectable_list(
@@ -208,6 +209,7 @@ impl StrofaBlock {
     pub fn active_event(&self, key: Key, state: &State) {
         match self {
             StrofaBlock::Search => {},
+            StrofaBlock::Sort => {},
             StrofaBlock::Library => {
                 
             },
@@ -226,25 +228,49 @@ impl StrofaBlock {
 
     pub fn hovered_event(&self, key: Key, state: &mut State) {
         match self {
-            StrofaBlock::Search => {},
+            StrofaBlock::Search => {
+                match key {
+                    Key::Down => state.hovered_block=StrofaBlock::Library, //make it so if came from Main, go back to main,
+                    Key::Right => state.hovered_block=StrofaBlock::Sort,
+                    _ => {},
+                }
+            },
+
+            StrofaBlock::Sort => {
+                match key {
+                    Key::Left => state.hovered_block=StrofaBlock::Search,
+                    Key::Down => state.hovered_block=StrofaBlock::MainBlock(state.main_block),
+                    _ => {},
+                }
+            },
+
             StrofaBlock::Library => {
                 match key {
                     Key::Up => state.hovered_block=StrofaBlock::Search,
                     Key::Down => state.hovered_block=StrofaBlock::Playlists,
-                    Key::Right => state.hovered_block=StrofaBlock::MainBlock(MainBlock::Queue),
+                    Key::Right => state.hovered_block=StrofaBlock::MainBlock(state.main_block),
                     _ => {},
                 }
             },
-            StrofaBlock::Playlists => {},
-            StrofaBlock::Playbar => {},
-            StrofaBlock::Error => {},
-            StrofaBlock::Empty => {},
-            StrofaBlock::MainBlock(SearchResults) => {},
-            StrofaBlock::MainBlock(Queue) => {},
-            StrofaBlock::MainBlock(Albums) => {},
-            StrofaBlock::MainBlock(Artists) => {},
-            StrofaBlock::MainBlock(Podcasts) => {},
-            StrofaBlock::MainBlock(Tracks) => {}       
+
+            StrofaBlock::Playlists => {
+                match key {
+                    Key::Up => state.hovered_block=StrofaBlock::Library,
+                    Key::Right => state.hovered_block=StrofaBlock::MainBlock(state.main_block),
+                    _ => {},
+                }
+            },
+
+            StrofaBlock::MainBlock(_) => {
+                match key {
+                    Key::Up => state.hovered_block=StrofaBlock::Search,
+                    Key::Left => state.hovered_block=StrofaBlock::Library,
+                    Key::Right => state.hovered_block=StrofaBlock::Playlists,
+                    _ => {},
+                }
+            },
+
+            _ => {}   
         }
     }
 }
