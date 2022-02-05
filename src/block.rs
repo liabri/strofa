@@ -12,7 +12,6 @@ use tui::{
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum StrofaBlock {
-    Analysis,
     PlayBar,
     AlbumTracks,
     AlbumList,
@@ -20,19 +19,14 @@ pub enum StrofaBlock {
     Empty,
     Error,
     HelpMenu,
-    Home,
     Search,
     Library,
     Playlists,
     Podcasts,
-    EpisodeTable,
-    RecentlyPlayed,
+    Queue,
     SearchResultBlock,
-    SelectDevice,
-    TrackTable,
-    MadeForYou,
+    TrackList,
     Artists,
-    BasicView,
 }
 
 // pub fn routes<B>(f: &mut Frame<B>, app: &App, layout_chunk: Rect) where B: Backend {
@@ -82,6 +76,26 @@ pub fn home<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Bac
     playlists(f, state, chunks[1]);
 }
 
+pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
+        .split(layout_chunk);
+
+    home(f, state, chunks[0]);
+
+    match state.active_block {
+        StrofaBlock::Queue => {},
+        StrofaBlock::AlbumTracks => {},
+        StrofaBlock::AlbumList => {},
+        StrofaBlock::ArtistBlock => {},
+        StrofaBlock::SearchResultBlock => {},
+        StrofaBlock::TrackList => {},
+
+        _ => {}
+    }
+}
+
 pub const LIBRARY_ENTRIES: [&str; 4] = [
     "Songs",
     "Albums",
@@ -129,6 +143,11 @@ pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
         state.hovered_block == StrofaBlock::Search,
     );
 
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(100), Constraint::Percentage(10)].as_ref())
+        .split(layout_chunk);
+
     let input_string: String = String::new();//app.input.iter().collect();
     let lines = Text::from((&input_string).as_str());
     let input = Paragraph::new(lines).block(
@@ -140,7 +159,7 @@ pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
             )).border_style(get_color(highlight_state, state.theme)),
     );
 
-    f.render_widget(input, layout_chunk);
+    f.render_widget(input, chunks[0]);
 }
 
 pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {

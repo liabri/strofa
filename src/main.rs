@@ -1,8 +1,10 @@
 mod state;
 use state::State;
 
-mod event;
 mod block;
+use block::StrofaBlock;
+
+mod event;
 mod theme;
 
 use anyhow::Result;
@@ -24,7 +26,6 @@ pub const SMALL_TERMINAL_WIDTH: u16 = 150;
 pub const SMALL_TERMINAL_HEIGHT: u16 = 45;
 
 fn main() -> Result<()> {
-    
     let mut stdout = std::io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     enable_raw_mode()?;
@@ -53,12 +54,12 @@ fn main() -> Result<()> {
                     0
                 };
 
-                let constraints = if state.size.width > SMALL_TERMINAL_WIDTH {
-                    vec![Constraint::Min(1), Constraint::Length(6)]
-                } else {
+                let constraints = //if state.size.width > SMALL_TERMINAL_WIDTH {
+                    // vec![Constraint::Min(1), Constraint::Length(6)]
+                // } else {
                     vec![Constraint::Length(3), Constraint::Min(1), Constraint::Length(6)]
-                };
-
+                // };
+                ;
                 let parent_layout = Layout::default()
                     .direction(Direction::Vertical)
                     .constraints(constraints.as_ref())
@@ -66,14 +67,15 @@ fn main() -> Result<()> {
                     .split(f.size());
 
                 block::search(f, &state, parent_layout[0]);
-                block::home(f, &state, parent_layout[1]);
+                block::centre(f, &state, parent_layout[1]);
+                // block::playbar(f, &state, parent_layout[2]);
             }
         })?;
 
         match events.next().unwrap() {
             event::Event::Input(key) => {
                 match key {
-                    // event::Key::Esc => handle_escape(state),
+                    event::Key::Esc => state.active_block=StrofaBlock::Empty,
 
                     _ if &key==state.keys.get("jump_to_album")? => {}//handle_jump_to_album(state),
                     // _ if &key==state.keys.get("jump_to_artist_album")? => handle_jump_to_artist_album(state),
