@@ -147,7 +147,13 @@ async fn user_interface() -> Result<()> {
                         // _ if &key==state.keys.get("basic_view")? => state.push_navigation_stack(RouteId::BasicView, StrofaBlock::BasicView),
                     
                         // block events 
-                        _ => state.active_block.handle(),
+                        _ => {
+                            if state.active_block!=StrofaBlock::Empty {
+                                state.active_block.active_event(key, &mut state);
+                            } else {
+                                state.hovered_block.hovered_event(key, &mut state);
+                            }
+                        }
                     }
                 }
             
