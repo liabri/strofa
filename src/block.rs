@@ -14,6 +14,7 @@ use tui::{
 #[derive(Default)]
 pub struct Blocks {
     library: Library,
+    playlists: Playlists,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -65,10 +66,8 @@ pub fn left<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Bac
         ].as_ref())
         .split(layout_chunk);
 
-    // library(f, state, chunks[0]);
     state.blocks.library.render(f, state, chunks[0]);
-
-    playlists(f, state, chunks[1]);
+    state.blocks.playlists.render(f, state, chunks[1]);
 }
 
 pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
@@ -140,43 +139,37 @@ impl Library {
     }    
 }
 
-// pub fn library<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-//     let highlight_state = (
-//         state.active_block == StrofaBlock::Library,
-//         state.hovered_block == StrofaBlock::Library,
-//     );
+pub struct Playlists {
+   pub entries: Vec<String>,
+   pub index: usize 
+}
 
-//     selectable_list(
-//         f,
-//         state,
-//         layout_chunk,
-//         "Library",
-//         &LIBRARY_ENTRIES,
-//         highlight_state,
-//         Some(0)// Some(app.library.selected_index),
-//     );
-// }
+impl Default for Playlists {
+    fn default() -> Self {
+        Self {
+            entries: Vec::new(), //use mpd_client to get em
+            index: 0,
+        }        
+    }
+}
 
+impl Playlists {
+    pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+        let highlight_state = (
+            state.active_block == StrofaBlock::Playlists,
+            state.hovered_block == StrofaBlock::Playlists,
+        );
 
-
-
-
-
-pub fn playlists<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let highlight_state = (
-        state.active_block == StrofaBlock::Playlists,
-        state.hovered_block == StrofaBlock::Playlists,
-    );
-
-    selectable_list(
-        f,
-        state,
-        layout_chunk,
-        "Playlists",
-        &["pop"],
-        highlight_state,
-        Some(0)// Some(app.library.selected_index),
-    );
+        selectable_list(
+            f,
+            state,
+            layout_chunk,
+            "Playlists",
+            &self.entries.as_slice(),
+            highlight_state,
+            Some(self.index)
+        );
+    }    
 }
 
 pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
@@ -277,9 +270,7 @@ impl StrofaBlock {
             StrofaBlock::Library => {
                 match key {
                     Key::Up => state.blocks.library.index-=1,
-                    Key::Left => {},
                     Key::Down => state.blocks.library.index+=1,
-                    Key::Right => {},
                     Key::Enter => {}
                     _ => {},
                 }
