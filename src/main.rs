@@ -114,9 +114,9 @@ async fn user_interface() -> Result<()> {
                     .margin(margin)
                     .split(f.size());
 
-                block::search(f, &state, parent_layout[0]);
+                block::top(f, &state, parent_layout[0]);
                 block::centre(f, &state, parent_layout[1]);
-                // block::playbar(f, &state, parent_layout[2]);
+                block::playbar(f, &state, parent_layout[2]);
             }
         })?;
 
