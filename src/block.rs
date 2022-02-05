@@ -206,12 +206,19 @@ where B: Backend, S: std::convert::AsRef<str> {
 }
 
 impl StrofaBlock {
-    pub fn active_event(&self, key: Key, state: &State) {
+    pub fn active_event(&self, key: Key, state: &mut State) {
         match self {
             StrofaBlock::Search => {},
             StrofaBlock::Sort => {},
             StrofaBlock::Library => {
-                
+                match key {
+                    Key::Up => {},
+                    Key::Left => {},
+                    Key::Down => {},
+                    Key::Right => {},
+                    Key::Enter => {}
+                    _ => {},
+                }
             },
             StrofaBlock::Playlists => {},
             StrofaBlock::Playbar => {},
@@ -245,6 +252,7 @@ impl StrofaBlock {
             },
 
             StrofaBlock::Library => {
+                println!("POPO");
                 match key {
                     Key::Up => state.hovered_block=StrofaBlock::Search,
                     Key::Down => state.hovered_block=StrofaBlock::Playlists,
@@ -271,6 +279,12 @@ impl StrofaBlock {
             },
 
             _ => {}   
+        }
+
+        // common behaviour
+        match key {
+            Key::Enter => state.active_block=state.hovered_block,
+            _ => {}
         }
     }
 }

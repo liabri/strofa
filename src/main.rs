@@ -107,6 +107,7 @@ async fn user_interface() -> Result<()> {
                     vec![Constraint::Length(3), Constraint::Min(1), Constraint::Length(6)]
                 // };
                 ;
+
                 let parent_layout = Layout::default()
                     .direction(Direction::Vertical)
                     .constraints(constraints.as_ref())
@@ -119,75 +120,78 @@ async fn user_interface() -> Result<()> {
             }
         })?;
 
-        while let Some(event) = events.next().await {
-            match event {//s.next().unwrap() {
-                event::Event::Input(key) => {
-                    match key {
-                        event::Key::Esc => state.active_block=StrofaBlock::Empty,
-                        event::Key::Ctrl('c') => break,
+        match events.next().await {
+            Some(event::Event::Input(key)) => {
+                match key {
+                    event::Key::Esc => state.active_block=StrofaBlock::Empty,
+                    event::Key::Ctrl('c') => break Ok(()),
 
-                        _ if &key==state.keys.get("jump_to_album")? => {}//handle_jump_to_album(state),
-                        // _ if &key==state.keys.get("jump_to_artist_album")? => handle_jump_to_artist_album(state),
-                        // _ if &key==state.keys.get("jump_to_context")? => handle_jump_to_context(state),
-                        // _ if &key==state.keys.get("manage_devices")? => state.dispatch(IoEvent::GetDevices),                
-                        // _ if &key==state.keys.get("decrease_volume")? => state.decrease_volume(),
-                        // _ if &key==state.keys.get("increase_volume")? => state.increase_volume(),
-                        // _ if &key==state.keys.get("toggle_playback")? => state.toggle_playback(), 
-                        // _ if &key==state.keys.get("seek_backwards")? => state.seek_backwards(),
-                        // _ if &key==state.keys.get("seek_forwards")? => state.seek_forwards(),
-                        // _ if &key==state.keys.get("next_track")? => state.dispatch(IoEvent::NextTrack),
-                        // _ if &key==state.keys.get("previous_track")? => state.previous_track(),
-                        // _ if &key==state.keys.get("help")? => state.set_current_route_state(Some(StrofaBlock::HelpMenu), None),
-                        // _ if &key==state.keys.get("shuffle")? => state.shuffle(),
-                        // _ if &key==state.keys.get("repeat")? => state.repeat(),
-                        // _ if &key==state.keys.get("search")? => state.set_current_route_state(Some(StrofaBlock::Input), Some(StrofaBlock::Input)),
-                        // _ if &key==state.keys.get("copy_song_url")? => state.copy_song_url(),
-                        // _ if &key==state.keys.get("copy_album_url")? => state.copy_album_url(),
-                        // _ if &key==state.keys.get("audio_analysis")? => state.get_audio_analysis(),
-                        // _ if &key==state.keys.get("basic_view")? => state.push_navigation_stack(RouteId::BasicView, StrofaBlock::BasicView),
-                    
-                        // block events 
-                        _ => {
-                            if state.active_block!=StrofaBlock::Empty {
-                                state.active_block.active_event(key, &mut state);
-                            } else {
-                                state.hovered_block.hovered_event(key, &mut state);
-                            }
+                    _ if &key==state.keys.get("jump_to_album")? => {}//handle_jump_to_album(state),
+                    // _ if &key==state.keys.get("jump_to_artist_album")? => handle_jump_to_artist_album(state),
+                    // _ if &key==state.keys.get("jump_to_context")? => handle_jump_to_context(state),
+                    // _ if &key==state.keys.get("manage_devices")? => state.dispatch(IoEvent::GetDevices),                
+                    // _ if &key==state.keys.get("decrease_volume")? => state.decrease_volume(),
+                    // _ if &key==state.keys.get("increase_volume")? => state.increase_volume(),
+                    // _ if &key==state.keys.get("toggle_playback")? => state.toggle_playback(), 
+                    // _ if &key==state.keys.get("seek_backwards")? => state.seek_backwards(),
+                    // _ if &key==state.keys.get("seek_forwards")? => state.seek_forwards(),
+                    // _ if &key==state.keys.get("next_track")? => state.dispatch(IoEvent::NextTrack),
+                    // _ if &key==state.keys.get("previous_track")? => state.previous_track(),
+                    // _ if &key==state.keys.get("help")? => state.set_current_route_state(Some(StrofaBlock::HelpMenu), None),
+                    // _ if &key==state.keys.get("shuffle")? => state.shuffle(),
+                    // _ if &key==state.keys.get("repeat")? => state.repeat(),
+                    // _ if &key==state.keys.get("search")? => state.set_current_route_state(Some(StrofaBlock::Input), Some(StrofaBlock::Input)),
+                    // _ if &key==state.keys.get("copy_song_url")? => state.copy_song_url(),
+                    // _ if &key==state.keys.get("copy_album_url")? => state.copy_album_url(),
+                    // _ if &key==state.keys.get("audio_analysis")? => state.get_audio_analysis(),
+                    // _ if &key==state.keys.get("basic_view")? => state.push_navigation_stack(RouteId::BasicView, StrofaBlock::BasicView),
+                
+                    // block events 
+                    _ => {
+                        let active_block = state.active_block;
+                        let hovered_block = state.hovered_block;
+
+                        if active_block!=StrofaBlock::Empty {
+                            active_block.active_event(key, &mut state);
+                        } else {
+                            hovered_block.hovered_event(key, &mut state);
                         }
                     }
                 }
-            
-                event::Event::Tick => {
-                    // if let Some(CurrentlyPlaybackContext {
-                    //     item: Some(item),
-                    //     progress_ms: Some(progress_ms),
-                    //     is_playing,
-                    //     ..
-                    // }) = &self.current_playback_context {
-                    //   // Update progress even when the song is not playing,
-                    //   // because seeking is possible while paused
-                    //   let elapsed = if *is_playing {
-                    //     self
-                    //       .instant_since_last_current_playback_poll
-                    //       .elapsed()
-                    //       .as_millis()
-                    //   } else {
-                    //     0u128
-                    //   } + u128::from(*progress_ms);
-
-                    //   let duration_ms = match item {
-                    //     PlayingItem::Track(track) => track.duration_ms,
-                    //     PlayingItem::Episode(episode) => episode.duration_ms,
-                    //   };
-
-                    //   if elapsed < u128::from(duration_ms) {
-                    //     self.song_progress_ms = elapsed;
-                    //   } else {
-                    //     self.song_progress_ms = duration_ms.into();
-                    //   }
-                    // }
-                }
             }
+        
+            Some(event::Event::Tick) => {
+                // if let Some(CurrentlyPlaybackContext {
+                //     item: Some(item),
+                //     progress_ms: Some(progress_ms),
+                //     is_playing,
+                //     ..
+                // }) = &self.current_playback_context {
+                //   // Update progress even when the song is not playing,
+                //   // because seeking is possible while paused
+                //   let elapsed = if *is_playing {
+                //     self
+                //       .instant_since_last_current_playback_poll
+                //       .elapsed()
+                //       .as_millis()
+                //   } else {
+                //     0u128
+                //   } + u128::from(*progress_ms);
+
+                //   let duration_ms = match item {
+                //     PlayingItem::Track(track) => track.duration_ms,
+                //     PlayingItem::Episode(episode) => episode.duration_ms,
+                //   };
+
+                //   if elapsed < u128::from(duration_ms) {
+                //     self.song_progress_ms = elapsed;
+                //   } else {
+                //     self.song_progress_ms = duration_ms.into();
+                //   }
+                // }
+            }
+
+            None => {}
         }
     }
 }
