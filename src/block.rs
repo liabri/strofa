@@ -113,7 +113,7 @@ pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
 
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(100), Constraint::Percentage(10)].as_ref())
+        .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
         .split(layout_chunk);
 
     let input_string: String = String::new();//app.input.iter().collect();
@@ -128,6 +128,19 @@ pub fn search<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
     );
 
     f.render_widget(input, chunks[0]);
+
+
+    let block = Block::default()
+        .title(Span::styled("Sort By", Style::default().fg(state.theme.text)))
+        .borders(Borders::ALL)
+        .border_style(get_color(highlight_state, state.theme));
+
+    let lines = Text::from("Language");
+    let sort = Paragraph::new(lines)
+        .block(block)
+        .style(get_color(highlight_state, state.theme));
+
+    f.render_widget(sort, chunks[1]);
 }
 
 pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
