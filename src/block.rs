@@ -11,6 +11,11 @@ use tui::{
   Frame,
 };
 
+#[derive(Default)]
+pub struct Blocks {
+    library: Library,
+}
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum StrofaBlock {
     Search, // top
@@ -60,7 +65,9 @@ pub fn left<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Bac
         ].as_ref())
         .split(layout_chunk);
 
-    library(f, state, chunks[0]);
+    // library(f, state, chunks[0]);
+    state.blocks.library.render(f, state, chunks[0]);
+
     playlists(f, state, chunks[1]);
 }
 
@@ -83,34 +90,77 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
             // MainBlock::Artists => artists(f, state, chunks[1]),
             // MainBlock::Tracks => tracks(f, state, chunks[1]),
             // MainBlock::Podcasts => podcasts(f, state, chunks[1])
+            _ => {},
         }
     }
 }
 
-pub const LIBRARY_ENTRIES: [&str; 5] = [
-    "Queue",
-    "Tracks",
-    "Albums",
-    "Artists",
-    "Podcasts"
-];
 
-pub fn library<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let highlight_state = (
-        state.active_block == StrofaBlock::Library,
-        state.hovered_block == StrofaBlock::Library,
-    );
 
-    selectable_list(
-        f,
-        state,
-        layout_chunk,
-        "Library",
-        &LIBRARY_ENTRIES,
-        highlight_state,
-        Some(0)// Some(app.library.selected_index),
-    );
+
+
+
+
+pub struct Library {
+   pub entries: [&'static str; 5],
+   pub index: usize 
 }
+
+impl Default for Library {
+    fn default() -> Self {
+        Self {
+            entries: [
+                "Queue",
+                "Tracks",
+                "Albums",
+                "Artists",
+                "Podcasts"
+            ],
+            index: 0,
+        }        
+    }
+}
+
+impl Library {
+    pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+        let highlight_state = (
+            state.active_block == StrofaBlock::Library,
+            state.hovered_block == StrofaBlock::Library,
+        );
+
+        selectable_list(
+            f,
+            state,
+            layout_chunk,
+            "Library",
+            &self.entries,
+            highlight_state,
+            Some(self.index)
+        );
+    }    
+}
+
+// pub fn library<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+//     let highlight_state = (
+//         state.active_block == StrofaBlock::Library,
+//         state.hovered_block == StrofaBlock::Library,
+//     );
+
+//     selectable_list(
+//         f,
+//         state,
+//         layout_chunk,
+//         "Library",
+//         &LIBRARY_ENTRIES,
+//         highlight_state,
+//         Some(0)// Some(app.library.selected_index),
+//     );
+// }
+
+
+
+
+
 
 pub fn playlists<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
     let highlight_state = (
@@ -179,7 +229,7 @@ pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Ba
         state,
         layout_chunk,
         "Queue",
-        &LIBRARY_ENTRIES,
+        &["pooop"],
         highlight_state,
         Some(0)// Some(app.library.selected_index),
     );
