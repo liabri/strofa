@@ -10,3 +10,10 @@ serde = { version = "1.0", features = ["derive"] }
 zmerald = { path="../zmerald" }
 mpd_client = "0.7.1"
 anyhow = "1.0.53"
+
+futures-util = "0.3"
+tracing-subscriber = { version = "0.3.2", features = ["env-filter"] }
+tokio = { version = "1.0.1", features = ["rt", "net", "time", "sync", "macros"] }
+
+# temporary until rust supports async/await syntax for defining streams
+async-stream = "0.3.2"
