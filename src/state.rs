@@ -3,13 +3,14 @@ use crate::event::Key;
 use crate::theme::Theme;
 
 use anyhow::{ anyhow, Result };
-use std::collections::HashMap;
+use std::collections::{ VecDeque, HashMap };
 use tui::layout::Rect;
 
 pub struct State {
     pub blocks: Blocks,
     pub active_block: StrofaBlock,
     pub hovered_block: StrofaBlock,
+    pub hover_history: VecDeque<StrofaBlock>, // Helps make tui controls more fluid by having memory
     pub main_block: MainBlock,
     pub size: Rect,
     pub theme: Theme,
@@ -24,11 +25,18 @@ impl State {
             blocks: Blocks::default(),
             active_block: StrofaBlock::Empty,
             hovered_block: StrofaBlock::Library,
+            hover_history: VecDeque::with_capacity(5),
             main_block: MainBlock::Queue,
             size: Rect::default(),
             theme: Theme::default(),
             keys: KeyBindings::default(),
         }
+    }
+
+    pub fn set_hover(&mut self, blk: StrofaBlock) {
+        self.hover_history.truncate(5);
+        self.hover_history.push_front(self.hovered_block);
+        self.hovered_block = blk;
     }
 }
 
