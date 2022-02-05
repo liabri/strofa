@@ -19,10 +19,13 @@ pub struct State {
 impl Default for State {
     fn default() -> Self {
         Self {
+            blocks: Blocks::default(),
             active_block: StrofaBlock::Empty,
             hovered_block: StrofaBlock::Library,
             main_block: MainBlock::Queue,
-            ..Self::default()
+            size: Rect::default(),
+            theme: Theme::default(),
+            keys: KeyBindings::default()
         }
     }
 }
