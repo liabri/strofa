@@ -42,7 +42,9 @@ pub enum MainBlock {
     Tracks,
 }
 
-// specific blocks
+
+
+
 
 pub fn top<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
     let highlight_state = (
@@ -81,12 +83,10 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
     left(f, state, chunks[0]);
 
 
-    queue(f, state, chunks[1]); //temp
-
-    if let StrofaBlock::MainBlock(blk) = state.active_block {
+    if let blk = state.main_block {
         match blk {
             // MainBlock::SearchResults => search_results(f, state, chunks[1]),
-            // MainBlock::Queue => queue(f, state, chunks[1]),
+            MainBlock::Queue => queue(f, state, chunks[1]),
             // MainBlock::Albums => albums(f, state, chunks[1]),
             // MainBlock::Artists => artists(f, state, chunks[1]),
             // MainBlock::Tracks => tracks(f, state, chunks[1]),
@@ -95,8 +95,6 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
         }
     }
 }
-
-
 
 
 
@@ -177,6 +175,7 @@ impl Playlists {
 }
 
 
+
 #[derive(Default)]
 pub struct Search {
    pub query: String,
@@ -245,6 +244,19 @@ impl Sort {
     }
 }
 
+
+
+pub fn playbar<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+    let playback = Block::default()
+        .title(Span::styled("Playback", Style::default().fg(state.theme.text)))
+        .borders(Borders::ALL)
+        .border_style(get_color((false, false), state.theme));
+
+    f.render_widget(playback, layout_chunk);
+}
+
+
+
 pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
     let highlight_state = (
         state.active_block == StrofaBlock::MainBlock(state.main_block),
@@ -260,15 +272,6 @@ pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Ba
         highlight_state,
         Some(0)// Some(app.library.selected_index),
     );
-}
-
-pub fn playbar<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let playback = Block::default()
-        .title(Span::styled("Playback", Style::default().fg(state.theme.text)))
-        .borders(Borders::ALL)
-        .border_style(get_color((false, false), state.theme));
-
-    f.render_widget(playback, layout_chunk);
 }
 
 // generics
@@ -305,7 +308,21 @@ impl StrofaBlock {
                 match key {
                     Key::Up => state.blocks.library.index-=1,
                     Key::Down => state.blocks.library.index+=1,
-                    Key::Enter => {}
+                    Key::Enter => {
+                        let index = state.blocks.library.index;
+                        let main_block = match state.blocks.library.entries[index] {
+                            "Queue" => MainBlock::Queue,
+                            "Tracks" => MainBlock::Tracks,
+                            "Albums" => MainBlock::Albums,
+                            "Artists" => MainBlock::Artists,
+                            "Podcasts" => MainBlock::Podcasts,
+                            _ => MainBlock::Queue,
+                        };
+
+                        state.main_block = main_block;
+                        state.active_block = StrofaBlock::MainBlock(main_block);
+                        state.hovered_block = StrofaBlock::Empty;
+                    }
                     _ => {},
                 }
             },
@@ -372,7 +389,10 @@ impl StrofaBlock {
 
         // common behaviour
         match key {
-            Key::Enter => state.active_block=state.hovered_block,
+            Key::Enter => { 
+                state.active_block=state.hovered_block;
+                state.hovered_block=StrofaBlock::Empty;
+            },
             _ => {}
         }
     }
