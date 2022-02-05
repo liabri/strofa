@@ -2,6 +2,11 @@ use crate::state::State;
 use crate::theme::get_color;
 use crate::event::Key;
 
+use anyhow::Result;
+use mpd_client::commands;
+use mpd_client::commands::responses::Song;
+use mpd_client::Client;
+
 use tui::{
   backend::Backend,
   layout::{ Constraint, Direction, Layout, Rect },
@@ -82,7 +87,6 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
 
     left(f, state, chunks[0]);
 
-
     if let blk = state.main_block {
         match blk {
             // MainBlock::SearchResults => search_results(f, state, chunks[1]),
@@ -94,6 +98,15 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
             _ => {},
         }
     }
+}
+
+pub fn bottom<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(100)].as_ref())
+        .split(layout_chunk);
+
+    Playbar::new(&state.client).unwrap().render(f, state, chunks[0]);
 }
 
 
@@ -253,13 +266,31 @@ impl Sort {
 
 
 
-pub fn playbar<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let playback = Block::default()
-        .title(Span::styled("Playback", Style::default().fg(state.theme.text)))
-        .borders(Borders::ALL)
-        .border_style(get_color((false, false), state.theme));
+pub struct Playbar {
+    // pub song: Song,
+}
 
-    f.render_widget(playback, layout_chunk);
+impl Playbar {
+    pub fn new(client: &Client) -> Result<Self> {
+        Ok(Self {})
+        // Ok(async {
+        //     let song = client.command(commands::CurrentSong).await?.unwrap().song;
+        //     return Self {
+        //         song,
+        //     };
+        // })
+
+        // Err(anyhow::anyhow!("popo"))
+    }
+
+    pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+        let playback = Block::default()
+            .title(Span::styled(/*self.song.title().unwrap()*/"gr", Style::default().fg(state.theme.text)))
+            .borders(Borders::ALL)
+            .border_style(get_color((false, false), state.theme));
+
+        f.render_widget(playback, layout_chunk);
+    }
 }
 
 
@@ -354,42 +385,62 @@ impl StrofaBlock {
         match self {
             StrofaBlock::Search => {
                 match key {
-                    Key::Down => state.hovered_block=StrofaBlock::Library, //make it so if came from Main, go back to main,
-                    Key::Right => state.hovered_block=StrofaBlock::Sort,
+                    Key::Down => {
+                        for previous in &state.hover_history {
+                            if *previous==StrofaBlock::Library || *previous==StrofaBlock::MainBlock(state.main_block) {
+                                state.set_hover(*previous);
+                                return;
+                            }
+                        }
+
+                        state.set_hover(StrofaBlock::Library)
+                    },
+
+                    Key::Right => state.set_hover(StrofaBlock::Sort),
                     _ => {},
                 }
             },
 
             StrofaBlock::Sort => {
                 match key {
-                    Key::Left => state.hovered_block=StrofaBlock::Search,
-                    Key::Down => state.hovered_block=StrofaBlock::MainBlock(state.main_block),
+                    Key::Left => state.set_hover(StrofaBlock::Search),
+                    Key::Down => state.set_hover(StrofaBlock::MainBlock(state.main_block)),
                     _ => {},
                 }
             },
 
             StrofaBlock::Library => {
                 match key {
-                    Key::Up => state.hovered_block=StrofaBlock::Search,
-                    Key::Down => state.hovered_block=StrofaBlock::Playlists,
-                    Key::Right => state.hovered_block=StrofaBlock::MainBlock(state.main_block),
+                    Key::Up => state.set_hover(StrofaBlock::Search),
+                    Key::Down => state.set_hover(StrofaBlock::Playlists),
+                    Key::Right => state.set_hover(StrofaBlock::MainBlock(state.main_block)),
                     _ => {},
                 }
             },
 
             StrofaBlock::Playlists => {
                 match key {
-                    Key::Up => state.hovered_block=StrofaBlock::Library,
-                    Key::Right => state.hovered_block=StrofaBlock::MainBlock(state.main_block),
+                    Key::Up => state.set_hover(StrofaBlock::Library),
+                    Key::Right => state.set_hover(StrofaBlock::MainBlock(state.main_block)),
                     _ => {},
                 }
             },
 
             StrofaBlock::MainBlock(_) => {
                 match key {
-                    Key::Up => state.hovered_block=StrofaBlock::Search,
-                    Key::Left => state.hovered_block=StrofaBlock::Library,
-                    Key::Right => state.hovered_block=StrofaBlock::Playlists,
+                    Key::Up => state.set_hover(StrofaBlock::Search),
+                    Key::Left => {
+                        for previous in &state.hover_history {
+                            if *previous==StrofaBlock::Library || *previous==StrofaBlock::Playlists {
+                                state.set_hover(*previous);
+                                return;
+                            }
+                        }
+
+                        state.set_hover(StrofaBlock::Library)
+                    },
+
+                    Key::Right => state.set_hover(StrofaBlock::Sort),
                     _ => {},
                 }
             },
@@ -399,10 +450,7 @@ impl StrofaBlock {
 
         // common behaviour
         match key {
-            Key::Enter => { 
-                state.active_block=state.hovered_block;
-                // state.hovered_block=StrofaBlock::Empty;
-            },
+            Key::Enter => state.active_block=state.hovered_block,
             _ => {}
         }
     }
