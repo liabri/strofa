@@ -3,15 +3,15 @@ use crate::theme::get_color;
 use crate::event::Key;
 
 use anyhow::Result;
-use mpd_client::{ Client };
+use mpd_client::commands::responses::{ Song, SongInQueue, Playlist };
 
 use tui::{
-  backend::Backend,
-  layout::{ Constraint, Direction, Layout, Rect },
-  style::{ Modifier, Style },
-  text::{ Span, Text },
-  widgets::{ Block, Borders, BorderType, List, ListItem, ListState, Paragraph },
-  Frame,
+    backend::Backend,
+    layout::{ Constraint, Direction, Layout, Rect },
+    style::{ Modifier, Style },
+    text::{ Span, Text },
+    widgets::{ Block, Borders, BorderType, List, ListItem, ListState, Paragraph },
+    Frame,
 };
 
 pub struct Blocks {
@@ -19,6 +19,7 @@ pub struct Blocks {
     pub sort: Sort,
     pub library: Library,
     pub playlists: Playlists,
+    pub playbar: Playbar,
     pub main: Box<dyn Main>,
 }
 
@@ -30,12 +31,13 @@ impl Default for Blocks {
             sort: Sort::default(),
             library: Library::default(),
             playlists: Playlists::default(),
+            playbar: Playbar::default(),
         }
     }
 }
 
-pub trait BlockTrait {
-    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend;
+pub trait Render<B: Backend> {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect);
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -45,6 +47,7 @@ pub enum StrofaBlock {
     Library,
     Playlists,
     Error, //todo popup
+    // Help, //todo popup, will contains shortcuts
     Empty,
     MainBlock(MainBlock)
 }
@@ -80,8 +83,7 @@ impl std::fmt::Display for TrackKind {
             TrackKind::Artist(s) => write!(f, " Artist {} ", s),
             TrackKind::Playlist(s) => write!(f, " Playlist {} ", s),
             TrackKind::Queue => write!(f, " Queue "),
-            TrackKind::All => write!(f, " Tracks "),
-
+            TrackKind::All => write!(f, " Tracks ")
         }
     }
 }
@@ -94,6 +96,25 @@ pub fn top<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Back
 
     state.blocks.search.render(f, state, chunks[0]);
     state.blocks.sort.render(f, state, chunks[1]);
+}
+
+pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
+        .split(layout_chunk);
+
+    left(f, state, chunks[0]);
+
+    // state.blocks.main.render(state);
+
+    match &state.main_block {
+        MainBlock::SearchResults(query) => SearchResults::new(query.to_string()).render(f, state, chunks[1]),
+        MainBlock::Tracks(kind) => Tracks::new(kind).render(f, state, chunks[1]),
+        MainBlock::Albums(kind) => Albums::new(kind).render(f, state, chunks[1]),
+        MainBlock::Artists => Artists::new().render(f, state, chunks[1]),
+        MainBlock::Podcasts => Podcasts::new().render(f, state, chunks[1]),
+    }
 }
 
 pub fn left<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
@@ -109,30 +130,13 @@ pub fn left<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Bac
     state.blocks.playlists.render(f, state, chunks[1]);
 }
 
-pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
-        .split(layout_chunk);
-
-    left(f, state, chunks[0]);
-
-    match &state.main_block {
-        MainBlock::SearchResults(query) => SearchResults::new(query.to_string()).render(f, state, chunks[1]),
-        MainBlock::Tracks(kind) => Tracks::new(kind).render(f, state, chunks[1]),
-        MainBlock::Albums(kind) => Albums::new(kind).render(f, state, chunks[1]),
-        MainBlock::Artists => Artists::new().render(f, state, chunks[1]),
-        MainBlock::Podcasts => Podcasts::new().render(f, state, chunks[1]),
-    }
-}
-
 pub fn bottom<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(100)].as_ref())
         .split(layout_chunk);
 
-    Playbar::new(&state.client).unwrap().render(f, state, chunks[0]);
+    state.blocks.playbar.render(f, state, chunks[0]);
 }
 
 
@@ -157,8 +161,8 @@ impl Default for Library {
     }
 }
 
-impl BlockTrait for Library {
-    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl<B: Backend> Render<B> for Library {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
             state.active_block == StrofaBlock::Library,
             state.hovered_block == StrofaBlock::Library,
@@ -182,21 +186,21 @@ impl BlockTrait for Library {
 }
 
 pub struct Playlists {
-   pub entries: Vec<String>,
+   pub entries: Vec<Playlist>,
    pub index: Index 
 }
 
 impl Default for Playlists {
     fn default() -> Self {
         Self {
-            entries: Vec::new(), //use mpd_client to get em
+            entries: Vec::new(),
             index: Index::new(50),
         }        
     }
 }
 
-impl BlockTrait for Playlists {
-    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl<B: Backend> Render<B> for Playlists {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
             state.active_block == StrofaBlock::Playlists,
             state.hovered_block == StrofaBlock::Playlists,
@@ -204,7 +208,7 @@ impl BlockTrait for Playlists {
 
         let items: Vec<ListItem> = self.entries
             .iter()
-            .map(|i| ListItem::new(Span::from(i.as_str())))
+            .map(|i| ListItem::new(Span::from(i.name.as_str())))
             .collect();
 
         selectable_list(
@@ -226,8 +230,8 @@ pub struct Search {
     pub query: String,
 }
 
-impl BlockTrait for Search {
-    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl<B: Backend> Render<B> for Search {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
             state.active_block == StrofaBlock::Search,
             state.hovered_block == StrofaBlock::Search,
@@ -269,8 +273,8 @@ impl Default for Sort {
     }
 }
 
-impl BlockTrait for Sort {
-    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl<B: Backend> Render<B> for Sort {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
             state.active_block == StrofaBlock::Sort,
             state.hovered_block == StrofaBlock::Sort,
@@ -294,28 +298,24 @@ impl BlockTrait for Sort {
 
 
 pub struct Playbar {
-    // pub song: Song,
+    pub current_song: Option<SongInQueue>,
 }
 
-impl Playbar {
-    pub fn new(client: &Client) -> Result<Self> {
-        Ok(Self {})
-        // Ok(async {
-        //     let song = client.command(commands::CurrentSong).await?.unwrap().song;
-        //     return Self {
-        //         song,
-        //     };
-        // })
+impl Default for Playbar {
+    fn default() -> Self {
+        Self { 
+            current_song: None,
+        }
     }
 }
 
-impl BlockTrait for Playbar {
-    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-        let playback = Block::default()
-            .title(Span::styled(/*self.song.title().unwrap()*/" David Bowie - Life on Mars ", Style::default().fg(state.theme.text)))
+impl<B: Backend> Render<B> for Playbar {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+        let playbar = Block::default()
+            .title(Span::styled(self.current_song.as_ref().unwrap().song.title().unwrap_or("Empty"), Style::default().fg(state.theme.text)))
             .borders(Borders::NONE);
 
-        f.render_widget(playback, layout_chunk);
+        f.render_widget(playbar, layout_chunk);
     }
 }
 
@@ -333,7 +333,7 @@ pub trait Main {
 pub struct Tracks {
     pub index: Index,
     pub kind: String,
-    // pub songs: Vec<Song>,
+    pub tracks: Vec<Song>,
 }
 
 impl Main for Tracks {
@@ -348,12 +348,13 @@ impl Tracks {
         Self {
             kind: kind.to_string(),
             index: Index::new(50),
+            tracks: Vec::new(),
         }
     }
 }
 
-impl BlockTrait for Tracks {
-    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl<B: Backend> Render<B> for Tracks {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
             if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
             if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
@@ -400,8 +401,10 @@ impl Albums {
             index: Index::new(50),
         }
     }
+}
 
-    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl<B: Backend> Render<B> for Albums {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
             if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
             if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
@@ -430,7 +433,7 @@ impl Albums {
 
 pub struct Artists {
     pub index: Index,
-    // pub songs: Vec<Song>,
+    // pub artists: Vec<Artist>,
 }
 
 impl Main for Artists {
@@ -445,8 +448,10 @@ impl Artists {
             index: Index::new(50),
         }
     }
+}
 
-    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl<B: Backend> Render<B> for Artists {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
             if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
             if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
@@ -488,8 +493,10 @@ impl Podcasts {
             index: Index::new(50),
         }
     }
+}
 
-    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl<B: Backend> Render<B> for Podcasts {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
             if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
             if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
@@ -532,8 +539,10 @@ impl SearchResults {
             index: Index::new(50),
         }
     }
+}
 
-    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl<B: Backend> Render<B> for SearchResults {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
             if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
             if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
@@ -585,8 +594,7 @@ impl Index {
     }
 }
 
-fn selectable_list<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title: &str, items: Vec<ListItem>, highlight_state: (bool, bool), selected_index: Option<usize>) 
-where B: Backend {
+fn selectable_list<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title: &str, items: Vec<ListItem>, highlight_state: (bool, bool), selected_index: Option<usize>) where B: Backend {
     let mut list_state = ListState::default();
     list_state.select(selected_index);
 

@@ -27,7 +27,7 @@ use crossterm::{
 
 use futures_util::StreamExt;
 // use tracing_subscriber::{ EnvFilter, FmtSubscriber };
-use mpd_client::{ Client, Subsystem };
+use mpd_client::{ Client, Subsystem, commands };
 use tokio::net::TcpStream;
 
 pub const SMALL_TERMINAL_WIDTH: u16 = 150;
@@ -54,9 +54,14 @@ async fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    let mut state = State::new(client);
     let events = event::Events::new();//std::pin::Pin::new(&mut event::Events::new());
     futures_util::pin_mut!(events);
+
+    let mut state = State::new();
+
+    //initial data
+    state.blocks.playlists.entries = client.command(commands::GetPlaylists).await?;
+    state.blocks.playbar.current_song = client.command(commands::CurrentSong).await?; 
 
     loop {
         if let Ok(size) = terminal.backend().size() {
@@ -102,7 +107,7 @@ async fn main() -> Result<()> {
         }
 
         match events.next().await {
-            Some(event::Event::Input(mut key)) => {
+            Some(event::Event::Input(key)) => {
 
                 if state.active_block==StrofaBlock::Search {
                     if let event::Key::Char(_) = key {
