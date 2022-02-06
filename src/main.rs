@@ -116,8 +116,13 @@ async fn main() -> Result<()> {
                     event::Key::Ctrl('c') => break,
 
                     _ if let Some(cmd) = state.keys.0.get(&key) => {
+
+                        //move this match into either State or Blocks
                         match cmd.as_str() {
-                            "to_queue" => state.blocks.set_main(block::MainBlock::Tracks(block::Tracks::new(&block::TrackKind::Queue))),
+                            "to_queue" => {
+                                let songs = client.command(commands::Queue).await.unwrap();
+                                state.blocks.set_main(block::MainBlock::Tracks(block::Tracks::new(&block::TrackKind::Queue, songs)));
+                            },
                             "search" => state.blocks.set_active(Blokka::Search),
                             _ => {},
                         } 

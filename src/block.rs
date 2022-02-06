@@ -305,7 +305,7 @@ impl std::fmt::Display for TrackKind {
 pub struct Tracks {
     pub index: Index,
     pub kind: String,
-    pub tracks: Vec<Song>,
+    pub tracks: Vec<SongInQueue>,
 }
 
 impl Main for Tracks {
@@ -314,13 +314,13 @@ impl Main for Tracks {
     }
 }
 
+// eventually access mpd directly from here, need to async it and pass in `client`
 impl Tracks {
-    pub fn new(kind: &TrackKind) -> Self {
-    //use kind to populate tracks
+    pub fn new(kind: &TrackKind, tracks: Vec<SongInQueue>) -> Self {
         Self {
             kind: kind.to_string(),
             index: Index::new(50),
-            tracks: Vec::new(),
+            tracks,
         }
     }
 }
@@ -332,7 +332,10 @@ impl<B: Backend> Render<B> for Tracks {
             state.blocks.is_hovered(Blokka::Main)
         );
 
-        let items: Vec<ListItem> = Vec::new();
+        let items: Vec<ListItem> = self.tracks
+            .iter()
+            .map(|x| ListItem::new(Span::raw(x.song.title().unwrap_or("Ger"))))
+            .collect();
 
         selectable_list(
             f,

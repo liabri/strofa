@@ -12,10 +12,6 @@ pub struct State {
     pub keys: KeyBindings,
 }
 
-//are there any benefits to keeping Blokka if im using Strings identify them anyway ?
-//i think i should separate the enum and the "block" objects, using the enum to solely keep track
-//of whats going on with the ui
-
 impl State {
     pub fn new() -> Self {
         Self {
@@ -47,7 +43,7 @@ impl Blocks {
             library: Library::default(),
             playlists: Playlists::default(),
             playbar: Playbar::default(),
-            main: MainBlock::Tracks(Tracks::new(&TrackKind::Queue)),
+            main: MainBlock::Tracks(Tracks::new(&TrackKind::Queue, Vec::new())),
             active: None,
             hovered: Blokka::Library,
             hover_history: VecDeque::new() 
