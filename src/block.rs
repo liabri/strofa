@@ -12,42 +12,67 @@ use tui::{
   layout::{ Constraint, Direction, Layout, Rect },
   style::{ Modifier, Style },
   text::{ Span, Text },
-  widgets::{ Block, Borders, List, ListItem, ListState, Paragraph },
+  widgets::{ Block, Borders, BorderType, List, ListItem, ListState, Paragraph },
   Frame,
 };
 
-#[derive(Default)]
 pub struct Blocks {
     search: Search,
     sort: Sort,
     library: Library,
     playlists: Playlists,
+    main: Box<dyn Main>,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub enum StrofaBlock {
-    Search, // top
-    Sort, // top
-    Library, // home
-    Playlists, // home
-    Playbar, // bottom
-    Error, // popup 
-    Empty, // misc
+impl Default for Blocks {
+    fn default() -> Self {
+        Self {
+            main: Box::new(Tracks::new(&TrackKind::Queue)),
+            search: Search::default(),
+            sort: Sort::default(),
+            library: Library::default(),
+            playlists: Playlists::default(),
+        }
+    }
+}
 
+//maybe make a Block trait containing 'render' method
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum StrofaBlock {
+    Search,
+    Sort,
+    Library,
+    Playlists,
+    Playbar,
+    Error, //todo popup
+    Empty,
     MainBlock(MainBlock)
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum MainBlock {
     SearchResults,
-    Queue,
-    Albums,
     Artists,
-    Podcasts,
-    Tracks,
+    Albums(AlbumKind),
+    Tracks(TrackKind),
+    Podcasts
 }
 
+#[derive(Clone, PartialEq, Debug)]
+pub enum AlbumKind {
+    Artist(String),
+    All,
+}
 
+#[derive(Clone, PartialEq, Debug)]
+pub enum TrackKind {
+    Album(String),
+    Artist(String),
+    Playlist(String),
+    Queue,
+    All,
+}
 
 
 
@@ -87,16 +112,13 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
 
     left(f, state, chunks[0]);
 
-    if let blk = state.main_block {
-        match blk {
-            // MainBlock::SearchResults => search_results(f, state, chunks[1]),
-            MainBlock::Queue => queue(f, state, chunks[1]),
-            // MainBlock::Albums => albums(f, state, chunks[1]),
-            // MainBlock::Artists => artists(f, state, chunks[1]),
-            // MainBlock::Tracks => tracks(f, state, chunks[1]),
-            // MainBlock::Podcasts => podcasts(f, state, chunks[1])
-            _ => {},
-        }
+    match &state.main_block {
+        // MainBlock::SearchResults => search_results(f, state, chunks[1]),
+        MainBlock::Tracks(kind) => Tracks::new(kind).render(f, state, chunks[1]),
+        // MainBlock::Albums(kind) => Albums::new(kind).render(f, state, chunks[1]),
+        // MainBlock::Artists => Artists::new().render(f, state, chunks[1]),
+        // MainBlock::Podcasts => Podcasts::new().render(f, state, chunks[1])
+        _ => {},
     }
 }
 
@@ -111,11 +133,9 @@ pub fn bottom<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
 
 
 
-
-
 pub struct Library {
    pub entries: [&'static str; 5],
-   pub index: usize 
+   pub index: Index 
 }
 
 impl Default for Library {
@@ -128,7 +148,7 @@ impl Default for Library {
                 "Artists",
                 "Podcasts"
             ],
-            index: 0,
+            index: Index::new(5),
         }        
     }
 }
@@ -140,14 +160,19 @@ impl Library {
             state.hovered_block == StrofaBlock::Library,
         );
 
+        let items: Vec<ListItem> = self.entries
+            .into_iter()
+            .map(|i| ListItem::new(Span::raw(i)))
+            .collect();
+
         selectable_list(
             f,
             state,
             layout_chunk,
-            "Library",
-            &self.entries,
+            " Library ",
+            items,
             highlight_state,
-            Some(self.index)
+            Some(self.index.inner)
         );
     }    
 }
@@ -156,14 +181,14 @@ impl Library {
 
 pub struct Playlists {
    pub entries: Vec<String>,
-   pub index: usize 
+   pub index: Index 
 }
 
 impl Default for Playlists {
     fn default() -> Self {
         Self {
             entries: Vec::new(), //use mpd_client to get em
-            index: 0,
+            index: Index::new(50),
         }        
     }
 }
@@ -175,14 +200,19 @@ impl Playlists {
             state.hovered_block == StrofaBlock::Playlists,
         );
 
+        let items: Vec<ListItem> = self.entries
+            .iter()
+            .map(|i| ListItem::new(Span::from(i.as_str())))
+            .collect();
+
         selectable_list(
             f,
             state,
             layout_chunk,
-            "Playlists",
-            &self.entries.as_slice(),
+            " Playlists ",
+            items,
             highlight_state,
-            Some(self.index)
+            Some(self.index.inner)
         );
     }    
 }
@@ -196,13 +226,6 @@ pub struct Search {
 
 impl Search {
     pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-
-
-
-
-
-
-
         let highlight_state = (
             state.active_block == StrofaBlock::Search,
             state.hovered_block == StrofaBlock::Search,
@@ -213,9 +236,10 @@ impl Search {
             Block::default()
                 .borders(Borders::ALL)
                 .title(Span::styled(
-                    "Search",
+                    " Search ",
                     get_color(highlight_state, state.theme),
-                )).border_style(get_color(highlight_state, state.theme)),
+                )).border_style(get_color(highlight_state, state.theme))
+                .border_type(BorderType::Rounded),
         );
 
         f.render_widget(search, layout_chunk);
@@ -227,7 +251,7 @@ impl Search {
 pub struct Sort {
    pub entries: [&'static str; 2],
    pub asc: bool,
-   pub index: usize 
+   pub index: Index 
 }
 
 impl Default for Sort {
@@ -238,7 +262,7 @@ impl Default for Sort {
                 "Language",
             ],
             asc: true,
-            index: 0,
+            index: Index::new(2),
         }        
     }
 }
@@ -251,9 +275,10 @@ impl Sort {
         );
 
         let block = Block::default()
-            .title(Span::styled("Sort By", Style::default().fg(state.theme.text)))
+            .title(Span::styled(" Sort By ", Style::default().fg(state.theme.text)))
             .borders(Borders::ALL)
-            .border_style(get_color(highlight_state, state.theme));
+            .border_style(get_color(highlight_state, state.theme))
+            .border_type(BorderType::Rounded);
 
         let lines = Text::from(self.entries[0]);
         let sort = Paragraph::new(lines)
@@ -279,15 +304,12 @@ impl Playbar {
         //         song,
         //     };
         // })
-
-        // Err(anyhow::anyhow!("popo"))
     }
 
     pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
         let playback = Block::default()
-            .title(Span::styled(/*self.song.title().unwrap()*/"gr", Style::default().fg(state.theme.text)))
-            .borders(Borders::ALL)
-            .border_style(get_color((false, false), state.theme));
+            .title(Span::styled(/*self.song.title().unwrap()*/" Playback ", Style::default().fg(state.theme.text)))
+            .borders(Borders::NONE);
 
         f.render_widget(playback, layout_chunk);
     }
@@ -295,48 +317,118 @@ impl Playbar {
 
 
 
-pub struct Tracks {
 
+pub trait Main {
+    fn index(&mut self) -> &mut Index;
+}
+
+impl Main for Tracks {
+    fn index(&mut self) -> &mut Index {
+        &mut self.index
+    }
+}
+
+pub struct Tracks {
+    pub index: Index,
+    // pub songs: Vec<Song>,
+}
+
+impl Tracks {
+    fn new(kind: &TrackKind) -> Self {
+        //use kind to populate tracks
+
+        Self {
+            index: Index::new(50),
+        }
+    }
+
+    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+        let highlight_state = (
+            if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
+            if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
+        );
+
+        let items: Vec<ListItem> = Vec::new(); 
+        // items
+        //     .iter()
+        //     .map(|i| ListItem::new(Span::raw(i.as_ref())))
+        //     .collect();
+
+        selectable_list(
+            f,
+            state,
+            layout_chunk,
+            " Queue ",
+            items,
+            highlight_state,
+            Some(self.index.inner)
+        );
+    }
 }
 
 pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
     let highlight_state = (
-        state.active_block == StrofaBlock::MainBlock(state.main_block),
-        state.hovered_block == StrofaBlock::MainBlock(state.main_block),
+        if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
+        if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
     );
 
     selectable_list(
         f,
         state,
         layout_chunk,
-        "Queue",
-        &["pooop"],
+        " Queue ",
+        Vec::new(),
         highlight_state,
         Some(0)// Some(app.library.selected_index),
     );
 }
 
+
+
+
+
+
+
+
+
 // generics
 
-fn selectable_list<B, S>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title: &str, items: &[S], highlight_state: (bool, bool), selected_index: Option<usize>) 
-where B: Backend, S: std::convert::AsRef<str> {
+pub struct Index {
+    inner: usize,
+    max: usize,
+}
+
+impl Index {
+    pub fn new(max: usize) -> Self {
+        Index {
+            inner: 0,
+            max: max-1,
+        }
+    }
+
+    pub fn dec(&mut self) {
+        if self.inner > 0 {
+            self.inner-=1;
+        }
+    }
+
+    pub fn inc(&mut self) {
+        if self.inner < self.max {
+            self.inner+=1;
+        }
+    }
+}
+
+
+fn selectable_list<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title: &str, items: Vec<ListItem>, highlight_state: (bool, bool), selected_index: Option<usize>) 
+where B: Backend {
     let mut list_state = ListState::default();
     list_state.select(selected_index);
 
-    let lst_items: Vec<ListItem> = items
-        .iter()
-        .map(|i| ListItem::new(Span::raw(i.as_ref())))
-        .collect();
-
-    let list = List::new(lst_items)
-        .block(
-            Block::default()
-            .title(Span::styled(
-                title,
-                get_color(highlight_state, state.theme),
-            )).borders(Borders::ALL).border_style(get_color(highlight_state, state.theme)),
-        ).style(Style::default().fg(state.theme.text))
-        .highlight_style(get_color(highlight_state, state.theme).add_modifier(Modifier::BOLD));
+    let colour = get_color(highlight_state, state.theme);
+    let list = List::new(items).block(Block::default()
+        .title(Span::styled(title, colour)).borders(Borders::ALL).border_style(colour).border_type(BorderType::Rounded)
+    ).style(Style::default().fg(state.theme.text)).highlight_style(colour.add_modifier(Modifier::BOLD));
 
     f.render_stateful_widget(list, layout_chunk, &mut list_state);
 }
@@ -348,22 +440,23 @@ impl StrofaBlock {
             StrofaBlock::Sort => {},
             StrofaBlock::Library => {
                 match key {
-                    Key::Up => state.blocks.library.index-=1,
-                    Key::Down => state.blocks.library.index+=1,
+                    Key::Up => state.blocks.library.index.dec(),//-=1,
+                    Key::Down => state.blocks.library.index.inc(),//+=1,
                     Key::Enter => {
-                        let index = state.blocks.library.index;
+                        let index = state.blocks.library.index.inner;
                         let main_block = match state.blocks.library.entries[index] {
-                            "Queue" => MainBlock::Queue,
-                            "Tracks" => MainBlock::Tracks,
-                            "Albums" => MainBlock::Albums,
+                            "Queue" => MainBlock::Tracks(TrackKind::Queue),
+                            "Tracks" => MainBlock::Tracks(TrackKind::All),
+                            "Albums" => MainBlock::Albums(AlbumKind::All),
                             "Artists" => MainBlock::Artists,
                             "Podcasts" => MainBlock::Podcasts,
-                            _ => MainBlock::Queue,
+                            _ => MainBlock::Tracks(TrackKind::Queue),
                         };
 
-                        state.main_block = main_block;
+                        state.set_hover(&StrofaBlock::Library);
+                        state.main_block = main_block.clone();
                         state.active_block = StrofaBlock::MainBlock(main_block);
-                        state.hovered_block = state.active_block;
+                        state.set_hover(&state.active_block.clone());
                     }
                     _ => {},
                 }
@@ -372,6 +465,13 @@ impl StrofaBlock {
             StrofaBlock::Playbar => {},
             StrofaBlock::Error => {},
             StrofaBlock::Empty => {},
+            StrofaBlock::MainBlock(_) => { 
+                match key {
+                    Key::Up => state.blocks.main.index().dec(),
+                    _ => {}
+                }
+            },
+
             StrofaBlock::MainBlock(SearchResults) => {},
             StrofaBlock::MainBlock(Queue) => {},
             StrofaBlock::MainBlock(Albums) => {},
@@ -386,61 +486,66 @@ impl StrofaBlock {
             StrofaBlock::Search => {
                 match key {
                     Key::Down => {
-                        for previous in &state.hover_history {
-                            if *previous==StrofaBlock::Library || *previous==StrofaBlock::MainBlock(state.main_block) {
-                                state.set_hover(*previous);
-                                return;
+                        for previous in state.hover_history.clone().into_iter() {
+                            if previous == StrofaBlock::Library {
+                                state.set_hover(&previous);
+                                return;  
+                            }
+
+                            if let StrofaBlock::MainBlock(_) = previous {
+                                state.set_hover(&previous);
+                                return;   
                             }
                         }
 
-                        state.set_hover(StrofaBlock::Library)
+                        state.set_hover(&StrofaBlock::Library)
                     },
 
-                    Key::Right => state.set_hover(StrofaBlock::Sort),
+                    Key::Right => state.set_hover(&StrofaBlock::Sort),
                     _ => {},
                 }
             },
 
             StrofaBlock::Sort => {
                 match key {
-                    Key::Left => state.set_hover(StrofaBlock::Search),
-                    Key::Down => state.set_hover(StrofaBlock::MainBlock(state.main_block)),
+                    Key::Left => state.set_hover(&StrofaBlock::Search),
+                    Key::Down => state.set_hover(&StrofaBlock::MainBlock(state.main_block.clone())),
                     _ => {},
                 }
             },
 
             StrofaBlock::Library => {
                 match key {
-                    Key::Up => state.set_hover(StrofaBlock::Search),
-                    Key::Down => state.set_hover(StrofaBlock::Playlists),
-                    Key::Right => state.set_hover(StrofaBlock::MainBlock(state.main_block)),
+                    Key::Up => state.set_hover(&StrofaBlock::Search),
+                    Key::Down => state.set_hover(&StrofaBlock::Playlists),
+                    Key::Right => state.set_hover(&StrofaBlock::MainBlock(state.main_block.clone())),
                     _ => {},
                 }
             },
 
             StrofaBlock::Playlists => {
                 match key {
-                    Key::Up => state.set_hover(StrofaBlock::Library),
-                    Key::Right => state.set_hover(StrofaBlock::MainBlock(state.main_block)),
+                    Key::Up => state.set_hover(&StrofaBlock::Library),
+                    Key::Right => state.set_hover(&StrofaBlock::MainBlock(state.main_block.clone())),
                     _ => {},
                 }
             },
 
             StrofaBlock::MainBlock(_) => {
                 match key {
-                    Key::Up => state.set_hover(StrofaBlock::Search),
+                    Key::Up => state.set_hover(&StrofaBlock::Search),
                     Key::Left => {
-                        for previous in &state.hover_history {
-                            if *previous==StrofaBlock::Library || *previous==StrofaBlock::Playlists {
-                                state.set_hover(*previous);
+                        for previous in state.hover_history.clone().into_iter() {
+                            if previous==StrofaBlock::Library || previous==StrofaBlock::Playlists {
+                                state.set_hover(&previous);
                                 return;
                             }
                         }
 
-                        state.set_hover(StrofaBlock::Library)
+                        state.set_hover(&StrofaBlock::Library)
                     },
 
-                    Key::Right => state.set_hover(StrofaBlock::Sort),
+                    Key::Right => state.set_hover(&StrofaBlock::Sort),
                     _ => {},
                 }
             },
@@ -450,7 +555,7 @@ impl StrofaBlock {
 
         // common behaviour
         match key {
-            Key::Enter => state.active_block=state.hovered_block,
+            Key::Enter => state.active_block=state.hovered_block.clone(),
             _ => {}
         }
     }

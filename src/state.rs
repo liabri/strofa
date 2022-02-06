@@ -1,4 +1,4 @@
-use crate::block::{ Blocks, StrofaBlock, MainBlock };
+use crate::block::{ Blocks, StrofaBlock, MainBlock, TrackKind };
 use crate::event::Key;
 use crate::theme::Theme;
 
@@ -26,17 +26,17 @@ impl State {
             active_block: StrofaBlock::Empty,
             hovered_block: StrofaBlock::Library,
             hover_history: VecDeque::with_capacity(5),
-            main_block: MainBlock::Queue,
+            main_block: MainBlock::Tracks(TrackKind::Queue),
             size: Rect::default(),
             theme: Theme::default(),
             keys: KeyBindings::default(),
         }
     }
 
-    pub fn set_hover(&mut self, blk: StrofaBlock) {
+    pub fn set_hover(&mut self, blk: &StrofaBlock) {
         self.hover_history.truncate(5);
-        self.hover_history.push_front(self.hovered_block);
-        self.hovered_block = blk;
+        self.hover_history.push_front(self.hovered_block.clone());
+        self.hovered_block = blk.clone();
     }
 }
 
