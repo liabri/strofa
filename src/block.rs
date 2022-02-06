@@ -9,7 +9,7 @@ use mpd_client::Client;
 
 use tui::{
   backend::Backend,
-  layout::{ Constraint, Direction, Layout, Rect },
+  layout::{ Alignment, Constraint, Direction, Layout, Rect },
   style::{ Modifier, Style },
   text::{ Span, Text },
   widgets::{ Block, Borders, BorderType, List, ListItem, ListState, Paragraph },
@@ -52,7 +52,7 @@ pub enum StrofaBlock {
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum MainBlock {
-    SearchResults,
+    SearchResults(String),
     Artists,
     Albums(AlbumKind),
     Tracks(TrackKind),
@@ -72,6 +72,19 @@ pub enum TrackKind {
     Playlist(String),
     Queue,
     All,
+}
+
+impl std::fmt::Display for TrackKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            TrackKind::Album(s) => write!(f, " Album {} ", s),
+            TrackKind::Artist(s) => write!(f, " Artist {} ", s),
+            TrackKind::Playlist(s) => write!(f, " Playlist {} ", s),
+            TrackKind::Queue => write!(f, " Queue "),
+            TrackKind::All => write!(f, " Tracks "),
+
+        }
+    }
 }
 
 
@@ -113,11 +126,11 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
     left(f, state, chunks[0]);
 
     match &state.main_block {
-        // MainBlock::SearchResults => search_results(f, state, chunks[1]),
+        // MainBlock::SearchResults(query) => SearchResult::new(query).render(f, state, chunks[1]),
         MainBlock::Tracks(kind) => Tracks::new(kind).render(f, state, chunks[1]),
-        // MainBlock::Albums(kind) => Albums::new(kind).render(f, state, chunks[1]),
-        // MainBlock::Artists => Artists::new().render(f, state, chunks[1]),
-        // MainBlock::Podcasts => Podcasts::new().render(f, state, chunks[1])
+        MainBlock::Albums(kind) => Albums::new(kind).render(f, state, chunks[1]),
+        MainBlock::Artists => Artists::new().render(f, state, chunks[1]),
+        MainBlock::Podcasts => Podcasts::new().render(f, state, chunks[1]),
         _ => {},
     }
 }
@@ -308,7 +321,7 @@ impl Playbar {
 
     pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
         let playback = Block::default()
-            .title(Span::styled(/*self.song.title().unwrap()*/" Playback ", Style::default().fg(state.theme.text)))
+            .title(Span::styled(/*self.song.title().unwrap()*/" David Bowie - Life on Mars ", Style::default().fg(state.theme.text)))
             .borders(Borders::NONE);
 
         f.render_widget(playback, layout_chunk);
@@ -330,11 +343,59 @@ impl Main for Tracks {
 
 pub struct Tracks {
     pub index: Index,
+    pub kind: String,
     // pub songs: Vec<Song>,
 }
 
 impl Tracks {
     fn new(kind: &TrackKind) -> Self {
+        //use kind to populate tracks
+
+        Self {
+            kind: kind.to_string(),
+            index: Index::new(50),
+        }
+    }
+
+    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+        let highlight_state = (
+            if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
+            if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
+        );
+
+        let items: Vec<ListItem> = Vec::new(); 
+        // items
+        //     .iter()
+        //     .map(|i| ListItem::new(Span::raw(i.as_ref())))
+        //     .collect();
+
+        selectable_list(
+            f,
+            state,
+            layout_chunk,
+            &self.kind,
+            items,
+            highlight_state,
+            Some(self.index.inner)
+        );
+    }
+}
+
+
+
+impl Main for Albums {
+    fn index(&mut self) -> &mut Index {
+        &mut self.index
+    }
+}
+
+pub struct Albums {
+    pub index: Index,
+    // pub songs: Vec<Song>,
+}
+
+impl Albums {
+    fn new(kind: &AlbumKind) -> Self {
         //use kind to populate tracks
 
         Self {
@@ -358,7 +419,7 @@ impl Tracks {
             f,
             state,
             layout_chunk,
-            " Queue ",
+            " Albums ",
             items,
             highlight_state,
             Some(self.index.inner)
@@ -366,28 +427,93 @@ impl Tracks {
     }
 }
 
-pub fn queue<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let highlight_state = (
-        if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
-        if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
-    );
 
-    selectable_list(
-        f,
-        state,
-        layout_chunk,
-        " Queue ",
-        Vec::new(),
-        highlight_state,
-        Some(0)// Some(app.library.selected_index),
-    );
+
+impl Main for Artists {
+    fn index(&mut self) -> &mut Index {
+        &mut self.index
+    }
+}
+
+pub struct Artists {
+    pub index: Index,
+    // pub songs: Vec<Song>,
+}
+
+impl Artists {
+    fn new() -> Self {
+        Self {
+            index: Index::new(50),
+        }
+    }
+
+    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+        let highlight_state = (
+            if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
+            if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
+        );
+
+        let items: Vec<ListItem> = Vec::new(); 
+        // items
+        //     .iter()
+        //     .map(|i| ListItem::new(Span::raw(i.as_ref())))
+        //     .collect();
+
+        selectable_list(
+            f,
+            state,
+            layout_chunk,
+            " Artists ",
+            items,
+            highlight_state,
+            Some(self.index.inner)
+        );
+    }
 }
 
 
 
+impl Main for Podcasts {
+    fn index(&mut self) -> &mut Index {
+        &mut self.index
+    }
+}
 
+pub struct Podcasts {
+    pub index: Index,
+    // pub songs: Vec<Song>,
+}
 
+impl Podcasts {
+    fn new() -> Self {
+        Self {
+            index: Index::new(50),
+        }
+    }
 
+    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+        let highlight_state = (
+            if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
+            if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
+        );
+
+        let items: Vec<ListItem> = Vec::new(); 
+        // items
+        //     .iter()
+        //     .map(|i| ListItem::new(Span::raw(i.as_ref())))
+        //     .collect();
+
+        selectable_list(
+            f,
+            state,
+            layout_chunk,
+            " Podcasts ",
+            items,
+            highlight_state,
+            Some(self.index.inner)
+        );
+    }
+}
 
 
 
@@ -450,7 +576,7 @@ impl StrofaBlock {
                             "Albums" => MainBlock::Albums(AlbumKind::All),
                             "Artists" => MainBlock::Artists,
                             "Podcasts" => MainBlock::Podcasts,
-                            _ => MainBlock::Tracks(TrackKind::Queue),
+                            _ => panic!("view not found"),
                         };
 
                         state.set_hover(&StrofaBlock::Library);
