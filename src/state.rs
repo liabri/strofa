@@ -14,13 +14,11 @@ pub struct State {
     pub size: Rect,
     pub theme: Theme,
     pub keys: KeyBindings,
-    pub client: mpd_client::Client,
 }
 
 impl State {
-    pub fn new(client: mpd_client::Client) -> Self {
+    pub fn new() -> Self {
         Self {
-            client,
             blocks: Blocks::default(),
             active_block: StrofaBlock::Empty,
             hovered_block: StrofaBlock::Library,
@@ -44,12 +42,6 @@ impl State {
     }
 }
 
-// impl KeyBindings {
-//     pub fn get(&self, k: &str) -> Result<&Key> {
-//         self.0.get(k).ok_or(anyhow!("key `{}` not found", k))
-//     }
-// }
-
 pub struct KeyBindings(pub HashMap<Key, String>);
 impl Default for KeyBindings {
     fn default() -> Self {
@@ -62,28 +54,26 @@ impl Default for KeyBindings {
         map.insert(Key::Char('d'), "next_page".to_string());
         map.insert(Key::Char('a'), "previous_page".to_string());
 
-        // map.insert("jump_to_start".to_string(), Key::Ctrl('f'));
-        // map.insert("jump_to_end".to_string(), Key::Ctrl('g'));
-        // map.insert("jump_to_album".to_string(), Key::Char('t'));
-        // map.insert("jump_to_artist_album".to_string(), Key::Char('y'));
-        // map.insert("jump_to_context".to_string(), Key::Char('o'));
+        map.insert(Key::Char('v'), "jump_to_start".to_string());
+        map.insert(Key::Char('z'), "jump_to_end".to_string());
+        map.insert(Key::Char('f'), "jump_to_album".to_string());
+        map.insert(Key::Char('c'), "jump_to_artist".to_string());
 
-        // map.insert("decrease_volume".to_string(), Key::Char('-'));
-        // map.insert("increase_volume".to_string(), Key::Char('+'));
-        // map.insert("toggle_playback".to_string(), Key::Char(' '));
-        // map.insert("seek_backwards".to_string(), Key::Char('<'));
-        // map.insert("seek_forwards".to_string(), Key::Char('>'));
-        // map.insert("next_track".to_string(), Key::Char(']'));
-        // map.insert("previous_track".to_string(), Key::Char('['));
-        // map.insert("shuffle".to_string(), Key::Ctrl('s'));
-        // map.insert("repeat".to_string(), Key::Ctrl('r'));
+        map.insert(Key::Char('-'), "decrease_volume".to_string());
+        map.insert(Key::Char('+'), "increase_volume".to_string());
+        map.insert(Key::Char(' '), "toggle_playback".to_string());
+        map.insert(Key::Char('<'), "seek_backwards".to_string());
+        map.insert(Key::Char('>'), "seek_forwards".to_string());
+        map.insert(Key::Char(']'), "next_track".to_string());
+        map.insert(Key::Char('['), "previous_track".to_string());
+        map.insert(Key::Char('s'), "shuffle".to_string());
+        map.insert(Key::Char('r'), "repeat".to_string());
         map.insert(Key::Char('/'), "search".to_string());
-        // map.insert("submit".to_string(), Key::Enter);
+        // map.insert(Key::Enter, "submit".to_string());
 
         // map.insert("copy_song_name".to_string(), Key::Char('c'));
         // map.insert("copy_album_name".to_string(), Key::Char('C'));
-        // map.insert("basic_view".to_string(), Key::Char('B'));
-        // map.insert("add_item_to_queue".to_string(), Key::Char('x'));
+        map.insert(Key::Char('x'), "add_item_to_queue".to_string());
 
         Self(map)
     }
