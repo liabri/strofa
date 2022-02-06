@@ -481,7 +481,6 @@ impl Main for Podcasts {
 
 pub struct Podcasts {
     pub index: Index,
-    // pub songs: Vec<Song>,
 }
 
 impl Podcasts {
@@ -515,8 +514,6 @@ impl Podcasts {
     }
 }
 
-
-
 // generics
 
 pub struct Index {
@@ -545,7 +542,6 @@ impl Index {
     }
 }
 
-
 fn selectable_list<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title: &str, items: Vec<ListItem>, highlight_state: (bool, bool), selected_index: Option<usize>) 
 where B: Backend {
     let mut list_state = ListState::default();
@@ -566,8 +562,8 @@ impl StrofaBlock {
             StrofaBlock::Sort => {},
             StrofaBlock::Library => {
                 match key {
-                    Key::Up => state.blocks.library.index.dec(),//-=1,
-                    Key::Down => state.blocks.library.index.inc(),//+=1,
+                    Key::Up => state.blocks.library.index.dec(),
+                    Key::Down => state.blocks.library.index.inc(),
                     Key::Enter => {
                         let index = state.blocks.library.index.inner;
                         let main_block = match state.blocks.library.entries[index] {
@@ -594,6 +590,7 @@ impl StrofaBlock {
             StrofaBlock::MainBlock(_) => { 
                 match key {
                     Key::Up => state.blocks.main.index().dec(),
+                    Key::Down => state.blocks.main.index().inc(),
                     _ => {}
                 }
             },

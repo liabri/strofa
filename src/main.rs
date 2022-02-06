@@ -1,10 +1,11 @@
 #![feature(async_stream)]
+#![feature(if_let_guard)]
 
 mod state;
 use state::State;
 
 mod block;
-use block::StrofaBlock;
+use block::{ StrofaBlock, MainBlock, TrackKind };
 
 mod event;
 mod theme;
@@ -94,6 +95,13 @@ async fn main() -> Result<()> {
                 match key {
                     event::Key::Esc => state.active_block=StrofaBlock::Empty,
                     event::Key::Ctrl('c') => break,
+
+                    _ if let Some(cmd) = state.keys.0.get(&key) => {
+                        match cmd.as_str() {
+                            "to_queue" => state.set_active(StrofaBlock::MainBlock(MainBlock::Tracks(TrackKind::Queue))),
+                            _ => {},
+                        } 
+                    },
 
                     // _ if &key==state.keys.get("jump_to_album")? => handle_jump_to_album(state),
                     // _ if &key==state.keys.get("jump_to_artist_album")? => handle_jump_to_artist_album(state),
