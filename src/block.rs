@@ -3,13 +3,11 @@ use crate::theme::get_color;
 use crate::event::Key;
 
 use anyhow::Result;
-use mpd_client::commands;
-use mpd_client::commands::responses::Song;
-use mpd_client::Client;
+use mpd_client::{ Client };
 
 use tui::{
   backend::Backend,
-  layout::{ Alignment, Constraint, Direction, Layout, Rect },
+  layout::{ Constraint, Direction, Layout, Rect },
   style::{ Modifier, Style },
   text::{ Span, Text },
   widgets::{ Block, Borders, BorderType, List, ListItem, ListState, Paragraph },
@@ -17,11 +15,11 @@ use tui::{
 };
 
 pub struct Blocks {
-    search: Search,
-    sort: Sort,
-    library: Library,
-    playlists: Playlists,
-    main: Box<dyn Main>,
+    pub search: Search,
+    pub sort: Sort,
+    pub library: Library,
+    pub playlists: Playlists,
+    pub main: Box<dyn Main>,
 }
 
 impl Default for Blocks {
@@ -44,7 +42,6 @@ pub enum StrofaBlock {
     Sort,
     Library,
     Playlists,
-    Playbar,
     Error, //todo popup
     Empty,
     MainBlock(MainBlock)
@@ -90,11 +87,6 @@ impl std::fmt::Display for TrackKind {
 
 
 pub fn top<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let highlight_state = (
-        state.active_block == StrofaBlock::Search,
-        state.hovered_block == StrofaBlock::Search,
-    );
-
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
@@ -126,12 +118,11 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
     left(f, state, chunks[0]);
 
     match &state.main_block {
-        // MainBlock::SearchResults(query) => SearchResult::new(query).render(f, state, chunks[1]),
+        MainBlock::SearchResults(query) => SearchResults::new(query.to_string()).render(f, state, chunks[1]),
         MainBlock::Tracks(kind) => Tracks::new(kind).render(f, state, chunks[1]),
         MainBlock::Albums(kind) => Albums::new(kind).render(f, state, chunks[1]),
         MainBlock::Artists => Artists::new().render(f, state, chunks[1]),
         MainBlock::Podcasts => Podcasts::new().render(f, state, chunks[1]),
-        _ => {},
     }
 }
 
@@ -234,7 +225,9 @@ impl Playlists {
 
 #[derive(Default)]
 pub struct Search {
-   pub query: String,
+    pub index: usize,
+    pub cursor_position: u16,
+    pub query: String,
 }
 
 impl Search {
@@ -262,9 +255,9 @@ impl Search {
 
 
 pub struct Sort {
-   pub entries: [&'static str; 2],
-   pub asc: bool,
-   pub index: Index 
+    pub entries: [&'static str; 2],
+    pub asc: bool,
+    pub index: Index 
 }
 
 impl Default for Sort {
@@ -337,16 +330,18 @@ pub trait Main {
     // fn prev_page(&mut self);
 }
 
-impl Main for Tracks {
-    fn index(&mut self) -> &mut Index {
-        &mut self.index
-    }
-}
+
 
 pub struct Tracks {
     pub index: Index,
     pub kind: String,
     // pub songs: Vec<Song>,
+}
+
+impl Main for Tracks {
+    fn index(&mut self) -> &mut Index {
+        &mut self.index
+    }
 }
 
 impl Tracks {
@@ -385,15 +380,17 @@ impl Tracks {
 
 
 
-impl Main for Albums {
-    fn index(&mut self) -> &mut Index {
-        &mut self.index
-    }
-}
+
 
 pub struct Albums {
     pub index: Index,
     // pub songs: Vec<Song>,
+}
+
+impl Main for Albums {
+    fn index(&mut self) -> &mut Index {
+        &mut self.index
+    }
 }
 
 impl Albums {
@@ -431,15 +428,16 @@ impl Albums {
 
 
 
-impl Main for Artists {
-    fn index(&mut self) -> &mut Index {
-        &mut self.index
-    }
-}
 
 pub struct Artists {
     pub index: Index,
     // pub songs: Vec<Song>,
+}
+
+impl Main for Artists {
+    fn index(&mut self) -> &mut Index {
+        &mut self.index
+    }
 }
 
 impl Artists {
@@ -475,14 +473,14 @@ impl Artists {
 
 
 
+pub struct Podcasts {
+    pub index: Index,
+}
+
 impl Main for Podcasts {
     fn index(&mut self) -> &mut Index {
         &mut self.index
     }
-}
-
-pub struct Podcasts {
-    pub index: Index,
 }
 
 impl Podcasts {
@@ -509,6 +507,50 @@ impl Podcasts {
             state,
             layout_chunk,
             " Podcasts ",
+            items,
+            highlight_state,
+            Some(self.index.inner)
+        );
+    }
+}
+
+
+pub struct SearchResults {
+    pub index: Index,
+    pub query: String,
+}
+
+impl Main for SearchResults {
+    fn index(&mut self) -> &mut Index {
+        &mut self.index
+    }
+}
+
+impl SearchResults {
+    fn new(query: String) -> Self {
+        Self {
+            query,
+            index: Index::new(50),
+        }
+    }
+
+    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+        let highlight_state = (
+            if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
+            if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
+        );
+
+        let items: Vec<ListItem> = Vec::new(); 
+        // items
+        //     .iter()
+        //     .map(|i| ListItem::new(Span::raw(i.as_ref())))
+        //     .collect();
+
+        selectable_list(
+            f,
+            state,
+            layout_chunk,
+            " Search Results ",
             items,
             highlight_state,
             Some(self.index.inner)
@@ -560,7 +602,17 @@ where B: Backend {
 impl StrofaBlock {
     pub fn active_event(&self, key: Key, state: &mut State) {
         match self {
-            StrofaBlock::Search => {},
+            StrofaBlock::Search => {
+                match key {
+                    Key::Enter => { 
+                        let query = state.blocks.search.query.clone();
+                        state.set_active(StrofaBlock::MainBlock(MainBlock::SearchResults(query)));
+                    },
+
+                    _ => {}
+                }
+            },
+
             StrofaBlock::Sort => {},
             StrofaBlock::Library => {
                 match key {
@@ -585,24 +637,22 @@ impl StrofaBlock {
                     _ => {},
                 }
             },
+
             StrofaBlock::Playlists => {},
-            StrofaBlock::Playbar => {},
             StrofaBlock::Error => {},
             StrofaBlock::Empty => {},
-            StrofaBlock::MainBlock(_) => { 
+            StrofaBlock::MainBlock(blk) => { 
                 match key {
                     Key::Up => state.blocks.main.index().dec(),
                     Key::Down => state.blocks.main.index().inc(),
+                    Key::Enter => {
+                        match blk {
+                            _ => {} //todo
+                        }
+                    }
                     _ => {}
                 }
             },
-
-            StrofaBlock::MainBlock(SearchResults) => {},
-            StrofaBlock::MainBlock(Queue) => {},
-            StrofaBlock::MainBlock(Albums) => {},
-            StrofaBlock::MainBlock(Artists) => {},
-            StrofaBlock::MainBlock(Podcasts) => {},
-            StrofaBlock::MainBlock(Tracks) => {}
         }
     }
 

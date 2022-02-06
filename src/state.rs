@@ -2,7 +2,6 @@ use crate::block::{ Blocks, StrofaBlock, MainBlock, TrackKind };
 use crate::event::Key;
 use crate::theme::Theme;
 
-use anyhow::{ anyhow, Result };
 use std::collections::{ VecDeque, HashMap };
 use tui::layout::Rect;
 
