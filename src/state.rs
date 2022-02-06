@@ -58,10 +58,10 @@ impl Default for KeyBindings {
 
         map.insert(Key::Backspace, "back".to_string());
         map.insert(Key::Char('q'), "to_queue".to_string());
-        // map.insert("to_playlists".to_string(), Key::Char('e'));
+        map.insert(Key::Char('e'), "to_playlists".to_string());
 
-        // map.insert("next_page".to_string(), Key::Ctrl('d'));
-        // map.insert("previous_page".to_string(), Key::Ctrl('a'));
+        map.insert(Key::Char('d'), "next_page".to_string());
+        map.insert(Key::Char('a'), "previous_page".to_string());
 
         // map.insert("jump_to_start".to_string(), Key::Ctrl('f'));
         // map.insert("jump_to_end".to_string(), Key::Ctrl('g'));
@@ -78,7 +78,7 @@ impl Default for KeyBindings {
         // map.insert("previous_track".to_string(), Key::Char('['));
         // map.insert("shuffle".to_string(), Key::Ctrl('s'));
         // map.insert("repeat".to_string(), Key::Ctrl('r'));
-        // map.insert("search".to_string(), Key::Char('/'));
+        map.insert(Key::Char('/'), "search".to_string());
         // map.insert("submit".to_string(), Key::Enter);
 
         // map.insert("copy_song_name".to_string(), Key::Char('c'));
