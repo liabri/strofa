@@ -34,7 +34,9 @@ impl Default for Blocks {
     }
 }
 
-//maybe make a Block trait containing 'render' method
+pub trait BlockTrait {
+    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend;
+}
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum StrofaBlock {
@@ -83,8 +85,6 @@ impl std::fmt::Display for TrackKind {
         }
     }
 }
-
-
 
 pub fn top<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
     let chunks = Layout::default()
@@ -157,8 +157,8 @@ impl Default for Library {
     }
 }
 
-impl Library {
-    pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl BlockTrait for Library {
+    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
         let highlight_state = (
             state.active_block == StrofaBlock::Library,
             state.hovered_block == StrofaBlock::Library,
@@ -181,8 +181,6 @@ impl Library {
     }    
 }
 
-
-
 pub struct Playlists {
    pub entries: Vec<String>,
    pub index: Index 
@@ -197,8 +195,8 @@ impl Default for Playlists {
     }
 }
 
-impl Playlists {
-    pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl BlockTrait for Playlists {
+    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
         let highlight_state = (
             state.active_block == StrofaBlock::Playlists,
             state.hovered_block == StrofaBlock::Playlists,
@@ -221,8 +219,6 @@ impl Playlists {
     }    
 }
 
-
-
 #[derive(Default)]
 pub struct Search {
     pub index: usize,
@@ -230,8 +226,8 @@ pub struct Search {
     pub query: String,
 }
 
-impl Search {
-    pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl BlockTrait for Search {
+    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
         let highlight_state = (
             state.active_block == StrofaBlock::Search,
             state.hovered_block == StrofaBlock::Search,
@@ -273,8 +269,8 @@ impl Default for Sort {
     }
 }
 
-impl Sort {
-    pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl BlockTrait for Sort {
+    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
         let highlight_state = (
             state.active_block == StrofaBlock::Sort,
             state.hovered_block == StrofaBlock::Sort,
@@ -311,8 +307,10 @@ impl Playbar {
         //     };
         // })
     }
+}
 
-    pub fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+impl BlockTrait for Playbar {
+    fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
         let playback = Block::default()
             .title(Span::styled(/*self.song.title().unwrap()*/" David Bowie - Life on Mars ", Style::default().fg(state.theme.text)))
             .borders(Borders::NONE);
@@ -346,14 +344,15 @@ impl Main for Tracks {
 
 impl Tracks {
     fn new(kind: &TrackKind) -> Self {
-        //use kind to populate tracks
-
+    //use kind to populate tracks
         Self {
             kind: kind.to_string(),
             index: Index::new(50),
         }
     }
+}
 
+impl BlockTrait for Tracks {
     fn render<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
         let highlight_state = (
             if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
