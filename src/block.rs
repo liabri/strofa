@@ -608,6 +608,16 @@ impl StrofaBlock {
                         state.set_active(StrofaBlock::MainBlock(MainBlock::SearchResults(query)));
                     },
 
+                    Key::Char(c) => {
+                        state.blocks.search.query.push(c);
+                        state.blocks.search.cursor_position+=1;
+                    },
+
+                    Key::Backspace => {
+                        state.blocks.search.query.pop();
+                        state.blocks.search.cursor_position-=1;
+                    }
+
                     _ => {}
                 }
             },

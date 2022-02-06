@@ -93,19 +93,25 @@ async fn main() -> Result<()> {
 
         if state.active_block==StrofaBlock::Search {
             terminal.show_cursor()?;
-            
-            // move cursor to search box
             terminal.backend_mut().execute(MoveTo(
-              1 + state.blocks.search.cursor_position,
-              1,
+              2 + state.blocks.search.cursor_position,
+              2,
             ))?;
-
         } else {
             terminal.hide_cursor()?;
         }
 
         match events.next().await {
-            Some(event::Event::Input(key)) => {
+            Some(event::Event::Input(mut key)) => {
+
+                if state.active_block==StrofaBlock::Search {
+                    if let event::Key::Char(_) = key {
+                        let active_block = state.active_block.clone(); 
+                        active_block.active_event(key, &mut state);
+                        continue;
+                    };
+                }
+
                 match key {
                     event::Key::Esc => state.active_block=StrofaBlock::Empty,
                     event::Key::Ctrl('c') => break,
