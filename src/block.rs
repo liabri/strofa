@@ -333,6 +333,8 @@ impl Playbar {
 
 pub trait Main {
     fn index(&mut self) -> &mut Index;
+    // fn next_page(&mut self);
+    // fn prev_page(&mut self);
 }
 
 impl Main for Tracks {

@@ -99,6 +99,7 @@ async fn main() -> Result<()> {
                     _ if let Some(cmd) = state.keys.0.get(&key) => {
                         match cmd.as_str() {
                             "to_queue" => state.set_active(StrofaBlock::MainBlock(MainBlock::Tracks(TrackKind::Queue))),
+                            "search" => state.set_active(StrofaBlock::Search),
                             _ => {},
                         } 
                     },
