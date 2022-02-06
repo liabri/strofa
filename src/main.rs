@@ -5,7 +5,7 @@ mod state;
 use state::State;
 
 mod block;
-use block::{ StrofaBlock, MainBlock, TrackKind };
+use block::{ Blokka };
 
 mod event;
 mod theme;
@@ -54,22 +54,17 @@ async fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    let events = event::Events::new();//std::pin::Pin::new(&mut event::Events::new());
-    futures_util::pin_mut!(events);
-
     let mut state = State::new();
-
-    //initial data
-    state.blocks.playlists.entries = client.command(commands::GetPlaylists).await?;
-    state.blocks.playbar.current_song = client.command(commands::CurrentSong).await?; 
+    let events = event::Events::new();
+    futures_util::pin_mut!(events);
 
     loop {
         if let Ok(size) = terminal.backend().size() {
             state.size = size;
         }
 
-        terminal.draw(|f| match state.active_block {
-            // StrofaBlock::Error => ui::draw_error_screen(&mut f, &app),
+        terminal.draw(|f| match state.blocks.active {
+            // Blokka::Error => ui::draw_error_screen(&mut f, &app),
             _ => {
                 let margin = if state.size.height > SMALL_TERMINAL_HEIGHT {
                     1
@@ -96,7 +91,7 @@ async fn main() -> Result<()> {
             }
         })?;
 
-        if state.active_block==StrofaBlock::Search {
+        if state.blocks.active==Some(Blokka::Search) {
             terminal.show_cursor()?;
             terminal.backend_mut().execute(MoveTo(
               2 + state.blocks.search.cursor_position,
@@ -109,54 +104,30 @@ async fn main() -> Result<()> {
         match events.next().await {
             Some(event::Event::Input(key)) => {
 
-                if state.active_block==StrofaBlock::Search {
+                if state.blocks.active==Some(Blokka::Search) {
                     if let event::Key::Char(_) = key {
-                        let active_block = state.active_block.clone(); 
-                        active_block.active_event(key, &mut state);
+                        state.blocks.active_event(key);
                         continue;
                     };
                 }
 
                 match key {
-                    event::Key::Esc => state.active_block=StrofaBlock::Empty,
+                    event::Key::Esc => state.blocks.active=None,
                     event::Key::Ctrl('c') => break,
 
                     _ if let Some(cmd) = state.keys.0.get(&key) => {
                         match cmd.as_str() {
-                            "to_queue" => state.set_active(StrofaBlock::MainBlock(MainBlock::Tracks(TrackKind::Queue))),
-                            "search" => state.set_active(StrofaBlock::Search),
+                            "to_queue" => state.blocks.set_main(block::MainBlock::Tracks(block::Tracks::new(&block::TrackKind::Queue))),
+                            "search" => state.blocks.set_active(Blokka::Search),
                             _ => {},
                         } 
                     },
 
-                    // _ if &key==state.keys.get("jump_to_album")? => handle_jump_to_album(state),
-                    // _ if &key==state.keys.get("jump_to_artist_album")? => handle_jump_to_artist_album(state),
-                    // _ if &key==state.keys.get("jump_to_context")? => handle_jump_to_context(state),
-                    // _ if &key==state.keys.get("manage_devices")? => state.dispatch(IoEvent::GetDevices),                
-                    // _ if &key==state.keys.get("decrease_volume")? => state.decrease_volume(),
-                    // _ if &key==state.keys.get("increase_volume")? => state.increase_volume(),
-                    // _ if &key==state.keys.get("toggle_playback")? => state.toggle_playback(), 
-                    // _ if &key==state.keys.get("seek_backwards")? => state.seek_backwards(),
-                    // _ if &key==state.keys.get("seek_forwards")? => state.seek_forwards(),
-                    // _ if &key==state.keys.get("next_track")? => state.dispatch(IoEvent::NextTrack),
-                    // _ if &key==state.keys.get("previous_track")? => state.previous_track(),
-                    // _ if &key==state.keys.get("help")? => state.set_current_route_state(Some(StrofaBlock::HelpMenu), None),
-                    // _ if &key==state.keys.get("shuffle")? => state.shuffle(),
-                    // _ if &key==state.keys.get("repeat")? => state.repeat(),
-                    // _ if &key==state.keys.get("search")? => state.set_current_route_state(Some(StrofaBlock::Input), Some(StrofaBlock::Input)),
-                    // _ if &key==state.keys.get("copy_song_url")? => state.copy_song_url(),
-                    // _ if &key==state.keys.get("copy_album_url")? => state.copy_album_url(),
-                    // _ if &key==state.keys.get("audio_analysis")? => state.get_audio_analysis(),
-                    // _ if &key==state.keys.get("basic_view")? => state.push_navigation_stack(RouteId::BasicView, StrofaBlock::BasicView),
-                
                     _ => {
-                        let active_block = state.active_block.clone();
-                        let hovered_block = state.hovered_block.clone();
-
-                        if active_block!=StrofaBlock::Empty {
-                            active_block.active_event(key, &mut state);
+                        if let None = state.blocks.active {
+                            state.blocks.hovered_event(key);
                         } else {
-                            hovered_block.hovered_event(key, &mut state);
+                            state.blocks.active_event(key); 
                         }
                     }
                 }

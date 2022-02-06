@@ -14,78 +14,21 @@ use tui::{
     Frame,
 };
 
-pub struct Blocks {
-    pub search: Search,
-    pub sort: Sort,
-    pub library: Library,
-    pub playlists: Playlists,
-    pub playbar: Playbar,
-    pub main: Box<dyn Main>,
-}
-
-impl Default for Blocks {
-    fn default() -> Self {
-        Self {
-            main: Box::new(Tracks::new(&TrackKind::Queue)),
-            search: Search::default(),
-            sort: Sort::default(),
-            library: Library::default(),
-            playlists: Playlists::default(),
-            playbar: Playbar::default(),
-        }
-    }
-}
-
-pub trait Render<B: Backend> {
-    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect);
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub enum StrofaBlock {
+//maybe move to state ?
+#[derive(Copy, Clone, PartialEq)]
+pub enum Blokka {
     Search,
     Sort,
     Library,
     Playlists,
+    Playbar,
     Error, //todo popup
-    // Help, //todo popup, will contains shortcuts
-    Empty,
-    MainBlock(MainBlock)
+    // Help, //todo popup, will contains all shortcuts
+    Main//(MainBlock)
 }
 
-#[derive(Clone, PartialEq, Debug)]
-pub enum MainBlock {
-    SearchResults(String),
-    Artists,
-    Albums(AlbumKind),
-    Tracks(TrackKind),
-    Podcasts
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub enum AlbumKind {
-    Artist(String),
-    All,
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub enum TrackKind {
-    Album(String),
-    Artist(String),
-    Playlist(String),
-    Queue,
-    All,
-}
-
-impl std::fmt::Display for TrackKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            TrackKind::Album(s) => write!(f, " Album {} ", s),
-            TrackKind::Artist(s) => write!(f, " Artist {} ", s),
-            TrackKind::Playlist(s) => write!(f, " Playlist {} ", s),
-            TrackKind::Queue => write!(f, " Queue "),
-            TrackKind::All => write!(f, " Tracks ")
-        }
-    }
+pub trait Render<B: Backend> {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect);
 }
 
 pub fn top<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
@@ -105,16 +48,7 @@ pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
         .split(layout_chunk);
 
     left(f, state, chunks[0]);
-
-    // state.blocks.main.render(state);
-
-    match &state.main_block {
-        MainBlock::SearchResults(query) => SearchResults::new(query.to_string()).render(f, state, chunks[1]),
-        MainBlock::Tracks(kind) => Tracks::new(kind).render(f, state, chunks[1]),
-        MainBlock::Albums(kind) => Albums::new(kind).render(f, state, chunks[1]),
-        MainBlock::Artists => Artists::new().render(f, state, chunks[1]),
-        MainBlock::Podcasts => Podcasts::new().render(f, state, chunks[1]),
-    }
+    state.blocks.main.render(f, state, chunks[1]);
 }
 
 pub fn left<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
@@ -125,6 +59,7 @@ pub fn left<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Bac
             Constraint::Percentage(70)
         ].as_ref())
         .split(layout_chunk);
+
 
     state.blocks.library.render(f, state, chunks[0]);
     state.blocks.playlists.render(f, state, chunks[1]);
@@ -138,7 +73,6 @@ pub fn bottom<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: B
 
     state.blocks.playbar.render(f, state, chunks[0]);
 }
-
 
 
 pub struct Library {
@@ -164,8 +98,8 @@ impl Default for Library {
 impl<B: Backend> Render<B> for Library {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
-            state.active_block == StrofaBlock::Library,
-            state.hovered_block == StrofaBlock::Library,
+            state.blocks.is_active(Blokka::Library),
+            state.blocks.is_hovered(Blokka::Library)
         );
 
         let items: Vec<ListItem> = self.entries
@@ -202,8 +136,8 @@ impl Default for Playlists {
 impl<B: Backend> Render<B> for Playlists {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
-            state.active_block == StrofaBlock::Playlists,
-            state.hovered_block == StrofaBlock::Playlists,
+            state.blocks.is_active(Blokka::Playlists),
+            state.blocks.is_hovered(Blokka::Playlists)
         );
 
         let items: Vec<ListItem> = self.entries
@@ -233,8 +167,8 @@ pub struct Search {
 impl<B: Backend> Render<B> for Search {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
-            state.active_block == StrofaBlock::Search,
-            state.hovered_block == StrofaBlock::Search,
+            state.blocks.is_active(Blokka::Search),
+            state.blocks.is_hovered(Blokka::Search)
         );
 
         let lines = Text::from((&self.query).as_str());
@@ -251,8 +185,6 @@ impl<B: Backend> Render<B> for Search {
         f.render_widget(search, layout_chunk);
     }    
 }
-
-
 
 pub struct Sort {
     pub entries: [&'static str; 2],
@@ -276,8 +208,8 @@ impl Default for Sort {
 impl<B: Backend> Render<B> for Sort {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
-            state.active_block == StrofaBlock::Sort,
-            state.hovered_block == StrofaBlock::Sort,
+            state.blocks.is_active(Blokka::Sort),
+            state.blocks.is_hovered(Blokka::Sort)
         );
 
         let block = Block::default()
@@ -295,16 +227,14 @@ impl<B: Backend> Render<B> for Sort {
     }
 }
 
-
-
 pub struct Playbar {
-    pub current_song: Option<SongInQueue>,
+    pub song: Option<SongInQueue>,
 }
 
 impl Default for Playbar {
     fn default() -> Self {
         Self { 
-            current_song: None,
+            song: None,
         }
     }
 }
@@ -312,7 +242,7 @@ impl Default for Playbar {
 impl<B: Backend> Render<B> for Playbar {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let playbar = Block::default()
-            .title(Span::styled(self.current_song.as_ref().unwrap().song.title().unwrap_or("Empty"), Style::default().fg(state.theme.text)))
+            .title(Span::styled(/*self.current_song.as_ref().unwrap().song.title().unwrap_or("Empty")*/ "pla", Style::default().fg(state.theme.text)))
             .borders(Borders::NONE);
 
         f.render_widget(playbar, layout_chunk);
@@ -324,11 +254,53 @@ impl<B: Backend> Render<B> for Playbar {
 
 pub trait Main {
     fn index(&mut self) -> &mut Index;
-    // fn next_page(&mut self);
-    // fn prev_page(&mut self);
 }
 
+impl<B: Backend> Render<B> for MainBlock {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+        match self {
+            MainBlock::SearchResults(x) => x.render(f, state, layout_chunk),
+            MainBlock::Artists(x) => x.render(f, state, layout_chunk),
+            MainBlock::Albums(x) => x.render(f, state, layout_chunk),
+            MainBlock::Tracks(x) => x.render(f, state, layout_chunk),
+            MainBlock::Podcasts => {}//x.render(f, state, layout_chunk)
 
+        }
+    }
+}
+
+pub enum MainBlock {
+    SearchResults(SearchResults),
+    Artists(Artists),
+    Albums(Albums),
+    Tracks(Tracks),
+    Podcasts
+}
+
+pub enum AlbumKind {
+    Artist(String),
+    All,
+}
+
+pub enum TrackKind {
+    Album(String),
+    Artist(String),
+    Playlist(String),
+    Queue,
+    All,
+}
+
+impl std::fmt::Display for TrackKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            TrackKind::Album(s) => write!(f, " Album {} ", s),
+            TrackKind::Artist(s) => write!(f, " Artist {} ", s),
+            TrackKind::Playlist(s) => write!(f, " Playlist {} ", s),
+            TrackKind::Queue => write!(f, " Queue "),
+            TrackKind::All => write!(f, " Tracks ")
+        }
+    }
+}
 
 pub struct Tracks {
     pub index: Index,
@@ -343,7 +315,7 @@ impl Main for Tracks {
 }
 
 impl Tracks {
-    fn new(kind: &TrackKind) -> Self {
+    pub fn new(kind: &TrackKind) -> Self {
     //use kind to populate tracks
         Self {
             kind: kind.to_string(),
@@ -356,15 +328,11 @@ impl Tracks {
 impl<B: Backend> Render<B> for Tracks {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
-            if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
-            if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
+            state.blocks.is_active(Blokka::Main),
+            state.blocks.is_hovered(Blokka::Main)
         );
 
-        let items: Vec<ListItem> = Vec::new(); 
-        // items
-        //     .iter()
-        //     .map(|i| ListItem::new(Span::raw(i.as_ref())))
-        //     .collect();
+        let items: Vec<ListItem> = Vec::new();
 
         selectable_list(
             f,
@@ -377,9 +345,6 @@ impl<B: Backend> Render<B> for Tracks {
         );
     }
 }
-
-
-
 
 
 pub struct Albums {
@@ -406,15 +371,11 @@ impl Albums {
 impl<B: Backend> Render<B> for Albums {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
-            if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
-            if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
+            state.blocks.is_active(Blokka::Main),
+            state.blocks.is_hovered(Blokka::Main)
         );
 
         let items: Vec<ListItem> = Vec::new(); 
-        // items
-        //     .iter()
-        //     .map(|i| ListItem::new(Span::raw(i.as_ref())))
-        //     .collect();
 
         selectable_list(
             f,
@@ -427,8 +388,6 @@ impl<B: Backend> Render<B> for Albums {
         );
     }
 }
-
-
 
 
 pub struct Artists {
@@ -453,15 +412,11 @@ impl Artists {
 impl<B: Backend> Render<B> for Artists {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
-            if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
-            if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
+            state.blocks.is_active(Blokka::Main),
+            state.blocks.is_hovered(Blokka::Main)
         );
 
         let items: Vec<ListItem> = Vec::new(); 
-        // items
-        //     .iter()
-        //     .map(|i| ListItem::new(Span::raw(i.as_ref())))
-        //     .collect();
 
         selectable_list(
             f,
@@ -474,7 +429,6 @@ impl<B: Backend> Render<B> for Artists {
         );
     }
 }
-
 
 
 pub struct Podcasts {
@@ -498,15 +452,11 @@ impl Podcasts {
 impl<B: Backend> Render<B> for Podcasts {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
-            if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
-            if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
+            state.blocks.is_active(Blokka::Main),
+            state.blocks.is_hovered(Blokka::Main)
         );
 
         let items: Vec<ListItem> = Vec::new(); 
-        // items
-        //     .iter()
-        //     .map(|i| ListItem::new(Span::raw(i.as_ref())))
-        //     .collect();
 
         selectable_list(
             f,
@@ -533,7 +483,7 @@ impl Main for SearchResults {
 }
 
 impl SearchResults {
-    fn new(query: String) -> Self {
+    pub fn new(query: String) -> Self {
         Self {
             query,
             index: Index::new(50),
@@ -544,15 +494,11 @@ impl SearchResults {
 impl<B: Backend> Render<B> for SearchResults {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
-            if let StrofaBlock::MainBlock(_) = state.active_block { true } else { false },
-            if let StrofaBlock::MainBlock(_) = state.hovered_block { true } else { false },
+            state.blocks.is_active(Blokka::Main),
+            state.blocks.is_hovered(Blokka::Main)
         );
 
         let items: Vec<ListItem> = Vec::new(); 
-        // items
-        //     .iter()
-        //     .map(|i| ListItem::new(Span::raw(i.as_ref())))
-        //     .collect();
 
         selectable_list(
             f,
@@ -567,7 +513,6 @@ impl<B: Backend> Render<B> for SearchResults {
 }
 
 // generics
-
 pub struct Index {
     inner: usize,
     max: usize,
@@ -604,151 +549,4 @@ fn selectable_list<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title
     ).style(Style::default().fg(state.theme.text)).highlight_style(colour.add_modifier(Modifier::BOLD));
 
     f.render_stateful_widget(list, layout_chunk, &mut list_state);
-}
-
-impl StrofaBlock {
-    pub fn active_event(&self, key: Key, state: &mut State) {
-        match self {
-            StrofaBlock::Search => {
-                match key {
-                    Key::Enter => { 
-                        let query = state.blocks.search.query.clone();
-                        state.set_active(StrofaBlock::MainBlock(MainBlock::SearchResults(query)));
-                    },
-
-                    Key::Char(c) => {
-                        state.blocks.search.query.push(c);
-                        state.blocks.search.cursor_position+=1;
-                    },
-
-                    Key::Backspace => {
-                        state.blocks.search.query.pop();
-                        state.blocks.search.cursor_position-=1;
-                    }
-
-                    _ => {}
-                }
-            },
-
-            StrofaBlock::Sort => {},
-            StrofaBlock::Library => {
-                match key {
-                    Key::Up => state.blocks.library.index.dec(),
-                    Key::Down => state.blocks.library.index.inc(),
-                    Key::Enter => {
-                        let index = state.blocks.library.index.inner;
-                        let main_block = match state.blocks.library.entries[index] {
-                            "Queue" => MainBlock::Tracks(TrackKind::Queue),
-                            "Tracks" => MainBlock::Tracks(TrackKind::All),
-                            "Albums" => MainBlock::Albums(AlbumKind::All),
-                            "Artists" => MainBlock::Artists,
-                            "Podcasts" => MainBlock::Podcasts,
-                            _ => panic!("view not found"),
-                        };
-
-                        state.set_hover(&StrofaBlock::Library);
-                        state.main_block = main_block.clone();
-                        state.active_block = StrofaBlock::MainBlock(main_block);
-                        state.set_hover(&state.active_block.clone());
-                    }
-                    _ => {},
-                }
-            },
-
-            StrofaBlock::Playlists => {},
-            StrofaBlock::Error => {},
-            StrofaBlock::Empty => {},
-            StrofaBlock::MainBlock(blk) => { 
-                match key {
-                    Key::Up => state.blocks.main.index().dec(),
-                    Key::Down => state.blocks.main.index().inc(),
-                    Key::Enter => {
-                        match blk {
-                            _ => {} //todo
-                        }
-                    }
-                    _ => {}
-                }
-            },
-        }
-    }
-
-    pub fn hovered_event(&self, key: Key, state: &mut State) {
-        match self {
-            StrofaBlock::Search => {
-                match key {
-                    Key::Down => {
-                        for previous in state.hover_history.clone().into_iter() {
-                            if previous == StrofaBlock::Library {
-                                state.set_hover(&previous);
-                                return;  
-                            }
-
-                            if let StrofaBlock::MainBlock(_) = previous {
-                                state.set_hover(&previous);
-                                return;   
-                            }
-                        }
-
-                        state.set_hover(&StrofaBlock::Library)
-                    },
-
-                    Key::Right => state.set_hover(&StrofaBlock::Sort),
-                    _ => {},
-                }
-            },
-
-            StrofaBlock::Sort => {
-                match key {
-                    Key::Left => state.set_hover(&StrofaBlock::Search),
-                    Key::Down => state.set_hover(&StrofaBlock::MainBlock(state.main_block.clone())),
-                    _ => {},
-                }
-            },
-
-            StrofaBlock::Library => {
-                match key {
-                    Key::Up => state.set_hover(&StrofaBlock::Search),
-                    Key::Down => state.set_hover(&StrofaBlock::Playlists),
-                    Key::Right => state.set_hover(&StrofaBlock::MainBlock(state.main_block.clone())),
-                    _ => {},
-                }
-            },
-
-            StrofaBlock::Playlists => {
-                match key {
-                    Key::Up => state.set_hover(&StrofaBlock::Library),
-                    Key::Right => state.set_hover(&StrofaBlock::MainBlock(state.main_block.clone())),
-                    _ => {},
-                }
-            },
-
-            StrofaBlock::MainBlock(_) => {
-                match key {
-                    Key::Up => state.set_hover(&StrofaBlock::Search),
-                    Key::Left => {
-                        for previous in state.hover_history.clone().into_iter() {
-                            if previous==StrofaBlock::Library || previous==StrofaBlock::Playlists {
-                                state.set_hover(&previous);
-                                return;
-                            }
-                        }
-
-                        state.set_hover(&StrofaBlock::Library)
-                    },
-
-                    Key::Right => state.set_hover(&StrofaBlock::Sort),
-                    _ => {},
-                }
-            },
-
-            _ => {}   
-        }
-
-        // common behaviour
-        match key {
-            Key::Enter => state.active_block=state.hovered_block.clone(),
-            _ => {}
-        }
-    }
 }
