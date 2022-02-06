@@ -85,7 +85,7 @@ async fn main() -> Result<()> {
 
                 block::top(f, &state, parent_layout[0]);
                 block::centre(f, &state, parent_layout[1]);
-                // block::playbar(f, &state, parent_layout[2]);
+                block::bottom(f, &state, parent_layout[2]);
             }
         })?;
 
@@ -115,10 +115,9 @@ async fn main() -> Result<()> {
                     // _ if &key==state.keys.get("audio_analysis")? => state.get_audio_analysis(),
                     // _ if &key==state.keys.get("basic_view")? => state.push_navigation_stack(RouteId::BasicView, StrofaBlock::BasicView),
                 
-                    // block events 
                     _ => {
-                        let active_block = state.active_block;
-                        let hovered_block = state.hovered_block;
+                        let active_block = state.active_block.clone();
+                        let hovered_block = state.hovered_block.clone();
 
                         if active_block!=StrofaBlock::Empty {
                             active_block.active_event(key, &mut state);
@@ -132,7 +131,7 @@ async fn main() -> Result<()> {
             Some(event::Event::Tick) => {
 
                 loop {
-                    println!("hello there pussy");
+                    println!("hello there");
 
                     match state_changes.next().await.transpose()? {
                         None => {},//break 'outer,             // connection was closed by the server
