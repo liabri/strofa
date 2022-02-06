@@ -22,11 +22,12 @@ use crossterm::{
     ExecutableCommand,
     execute,
     terminal::{ enable_raw_mode, disable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, SetTitle },
+    cursor::MoveTo
 };
 
 use futures_util::StreamExt;
-use tracing_subscriber::{ EnvFilter, FmtSubscriber };
-use mpd_client::{commands, Client, Subsystem };
+// use tracing_subscriber::{ EnvFilter, FmtSubscriber };
+use mpd_client::{ Client, Subsystem };
 use tokio::net::TcpStream;
 
 pub const SMALL_TERMINAL_WIDTH: u16 = 150;
@@ -89,6 +90,19 @@ async fn main() -> Result<()> {
                 block::bottom(f, &state, parent_layout[2]);
             }
         })?;
+
+        if state.active_block==StrofaBlock::Search {
+            terminal.show_cursor()?;
+            
+            // move cursor to search box
+            terminal.backend_mut().execute(MoveTo(
+              1 + state.blocks.search.cursor_position,
+              1,
+            ))?;
+
+        } else {
+            terminal.hide_cursor()?;
+        }
 
         match events.next().await {
             Some(event::Event::Input(key)) => {
