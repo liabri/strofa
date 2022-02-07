@@ -106,30 +106,38 @@ async fn main() -> Result<()> {
 
                 if state.blocks.active==Some(Blokka::Search) {
                     if let event::Key::Char(_) = key {
-                        state.blocks.active_event(key).await;
+                        state.active_event(key).await;
                         continue;
                     };
                 }
 
                 match key {
-                    event::Key::Esc => state.blocks.active=None,
+                    event::Key::Esc => {
+                        // if let Some(Blokka::Main) = state.blocks.active {
+                        //     let blk = state.blocks.hover_previous(1).clone();
+                        //     state.blocks.set_hover(&blk);
+                        // }
+
+                        state.blocks.active=None
+                    },
                     event::Key::Ctrl('c') => break,
 
                     _ if let Some(cmd) = state.keys.0.get(&key) => {
+                        state.handle_keybind(cmd.to_owned().as_str()).await;
 
-                        //move this match into either State or Blocks
-                        match cmd.as_str() {
-                            // "to_queue" => state.blocks.set_main(block::MainBlock::Tracks(block::Tracks::new(&block::TrackKind::Queue).await)),
-                            "search" => state.blocks.set_active(Blokka::Search),
-                            _ => {},
-                        } 
+                        // //move this match into either State or Blocks
+                        // match cmd.as_str() {
+                        //     // "to_queue" => state.blocks.set_main(block::MainBlock::Tracks(block::Tracks::new(&block::TrackKind::Queue).await)),
+                        //     "search" => state.blocks.set_active(Blokka::Search),
+                        //     _ => {},
+                        // } 
                     },
 
                     _ => {
                         if let None = state.blocks.active {
                             state.blocks.hovered_event(key);
                         } else {
-                            state.blocks.active_event(key); 
+                            state.active_event(key).await; 
                         }
                     }
                 }
