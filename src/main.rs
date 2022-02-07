@@ -122,8 +122,8 @@ async fn main() -> Result<()> {
                     },
                     event::Key::Ctrl('c') => break,
 
-                    _ if let Some(cmd) = state.keys.0.get(&key) => {
-                        state.handle_keybind(cmd.to_owned().as_str()).await;
+                    _ if let Some(cmd) = state.keys.0.clone().get(&key) => {
+                        state.handle_keybind(&cmd.clone()).await;
 
                         // //move this match into either State or Blocks
                         // match cmd.as_str() {
