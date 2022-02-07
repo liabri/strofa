@@ -103,7 +103,6 @@ async fn main() -> Result<()> {
 
         match events.next().await {
             Some(event::Event::Input(key)) => {
-
                 if state.blocks.active==Some(Blokka::Search) {
                     if let event::Key::Char(_) = key {
                         state.active_event(key).await;
@@ -113,6 +112,8 @@ async fn main() -> Result<()> {
 
                 match key {
                     event::Key::Esc => {
+
+                        // some nice fluidity
                         // if let Some(Blokka::Main) = state.blocks.active {
                         //     let blk = state.blocks.hover_previous(1).clone();
                         //     state.blocks.set_hover(&blk);
@@ -120,22 +121,16 @@ async fn main() -> Result<()> {
 
                         state.blocks.active=None
                     },
+
                     event::Key::Ctrl('c') => break,
 
                     _ if let Some(cmd) = state.keys.0.clone().get(&key) => {
                         state.handle_keybind(&cmd.clone()).await;
-
-                        // //move this match into either State or Blocks
-                        // match cmd.as_str() {
-                        //     // "to_queue" => state.blocks.set_main(block::MainBlock::Tracks(block::Tracks::new(&block::TrackKind::Queue).await)),
-                        //     "search" => state.blocks.set_active(Blokka::Search),
-                        //     _ => {},
-                        // } 
                     },
 
                     _ => {
                         if let None = state.blocks.active {
-                            state.blocks.hovered_event(key);
+                            state.hovered_event(key);
                         } else {
                             state.active_event(key).await; 
                         }
@@ -146,11 +141,14 @@ async fn main() -> Result<()> {
             Some(event::Event::Tick) => {
 
                 loop {
-                    println!("hello there");
+                            state.blocks.set_active(Blokka::Search);
 
                     match state_changes.next().await.transpose()? {
                         None => {},//break 'outer,             // connection was closed by the server
-                        Some(Subsystem::Player) => { println!("pppppp"); break }, // something relevant changed
+                        Some(Subsystem::Player) => {
+                            state.blocks.set_active(Blokka::Search);
+                            println!("pppppp"); break;
+                        }, // something relevant changed
                         Some(_) => continue,              // something changed but we don't care
                     }
                 }
