@@ -14,8 +14,7 @@ impl Events {
         stream! {
             loop {
                 if let event::Event::Key(key) = event::read().unwrap() {
-                    let key = Key::from(key);
-                    yield Event::Input(key);
+                    yield Event::Input(Key::from(key));
                 } else {
                     yield Event::Tick
                 }

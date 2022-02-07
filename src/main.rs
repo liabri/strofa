@@ -139,10 +139,7 @@ async fn main() -> Result<()> {
             }
         
             Some(event::Event::Tick) => {
-
                 loop {
-                            state.blocks.set_active(Blokka::Search);
-
                     match state_changes.next().await.transpose()? {
                         None => {},//break 'outer,             // connection was closed by the server
                         Some(Subsystem::Player) => {
