@@ -253,9 +253,14 @@ impl<B: Backend> Render<B> for Playbar {
 
 
 
-pub trait Main {
-    fn index(&mut self) -> &mut Index;
+pub enum MainBlock {
+    SearchResults(SearchResults),
+    Artists(Artists),
+    Albums(Albums),
+    Tracks(Tracks),
+    Podcasts(Podcasts)
 }
+
 
 impl<B: Backend> Render<B> for MainBlock {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
@@ -264,18 +269,27 @@ impl<B: Backend> Render<B> for MainBlock {
             MainBlock::Artists(x) => x.render(f, state, layout_chunk),
             MainBlock::Albums(x) => x.render(f, state, layout_chunk),
             MainBlock::Tracks(x) => x.render(f, state, layout_chunk),
-            MainBlock::Podcasts => {}//x.render(f, state, layout_chunk)
+            MainBlock::Podcasts(x) => x.render(f, state, layout_chunk),
 
         }
     }
 }
 
-pub enum MainBlock {
-    SearchResults(SearchResults),
-    Artists(Artists),
-    Albums(Albums),
-    Tracks(Tracks),
-    Podcasts
+impl Main for MainBlock {
+    fn index(&mut self) -> &mut Index {
+        match self {
+            MainBlock::SearchResults(x) => x.index(), 
+            MainBlock::Artists(x) => x.index(), 
+            MainBlock::Albums(x) => x.index(), 
+            MainBlock::Tracks(x) => x.index(), 
+            MainBlock::Podcasts(x) => x.index(), 
+        }
+    }
+}
+
+
+pub trait Main {
+    fn index(&mut self) -> &mut Index;
 }
 
 pub enum AlbumKind {
