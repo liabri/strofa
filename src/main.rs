@@ -133,9 +133,19 @@ async fn main() -> Result<()> {
         }
 
         // mpd events
-        match state_changes.poll_next().transpose()? {
-            Some(Subsystem::Player) => println!("important"), 
-            _ => {}
+        match futures::poll!(state_changes.next()) {
+            futures::task::Poll::Ready(x) => {
+                match x.transpose()? {
+                    Some(Subsystem::Player) => println!("player update"), 
+                    Some(Subsystem::Queue) => {},
+                    Some(Subsystem::StoredPlaylist) => {},
+                    Some(Subsystem::Update) => {}
+                    Some(Subsystem::Database) => {}
+                    _ => { println!("BIGBOY"); }
+                }
+            },
+
+            futures::task::Poll::Pending => {}
         }
     }
 

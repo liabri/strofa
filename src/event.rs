@@ -22,6 +22,9 @@ impl Events {
     }
 }
 
+// normalise stream above, do I need async_stream ?
+// todo: use crossterm::KeyEvent instead of this abstraction.
+
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum Key {
     Enter,
