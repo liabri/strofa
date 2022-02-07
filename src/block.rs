@@ -1,7 +1,7 @@
 use crate::state::State;
 use crate::theme::get_color;
 
-use mpd_client::commands::responses::{ Song, SongInQueue, Playlist };
+use mpd_client::commands::responses::{ Song, SongInQueue, Playlist, PlayState };
 use mpd_client::{ Client, commands };
 
 use tui::{
@@ -234,6 +234,15 @@ impl Playbar {
     pub async fn new() -> Self {
         Self { 
             song: None,
+        }
+    }
+
+    pub async fn toggle(&self, client: Client) {
+        let status = client.command(commands::Status).await.unwrap();
+        match status.state {
+            PlayState::Stopped => client.command(commands::SetPause(true)).await.unwrap(),
+            PlayState::Playing => client.command(commands::SetPause(true)).await.unwrap(),
+            PlayState::Paused => client.command(commands::Play::current()).await.unwrap(),
         }
     }
 }

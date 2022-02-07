@@ -29,6 +29,7 @@ impl State {
         match cmd {
             "to_queue" => self.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Queue, self.client.clone()).await)),
             "search" => self.blocks.set_active(Blokka::Search),
+            "toggle_playback" => self.blocks.playbar.toggle(self.client.clone()).await,
             _ => {},
         } 
     }
