@@ -9,7 +9,7 @@ use tui::{
     layout::{ Constraint, Direction, Layout, Rect },
     style::{ Modifier, Style },
     text::{ Span, Text },
-    widgets::{ Block, Borders, BorderType, List, ListItem, ListState, Paragraph },
+    widgets::{ Block, Borders, BorderType, List, ListItem, ListState, Paragraph, Row, Table },
     Frame,
 };
 
@@ -324,6 +324,24 @@ impl std::fmt::Display for TrackKind {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct TableHeaderItem<'a> {
+  text: &'a str,
+  width: u16
+}
+
 pub struct Tracks {
     pub index: Index,
     pub kind: String,
@@ -346,7 +364,7 @@ impl Tracks {
 
         Self {
             kind: kind.to_string(),
-            index: Index::new(50),
+            index: Index::new(tracks.len()),
             tracks,
         }
     }
@@ -364,20 +382,45 @@ impl<B: Backend> Render<B> for Tracks {
             state.blocks.is_hovered(Blokka::Main)
         );
 
-        let items: Vec<ListItem> = self.tracks
+        let items = self.tracks
             .iter()
-            .map(|x| ListItem::new(Span::raw(x.song.title().unwrap_or("Ger"))))
-            .collect();
+            .map(|track| { 
+                let artists = track.song.artists();
+                let artist = if artists.len() > 0 {
+                    artists[0].to_string()
+                } else {
+                    String::new()
+                };         
 
-        selectable_list(
+                //if title is empty, take file name
+
+                vec![
+                    track.position.0.to_string(), 
+                    track.song.title().unwrap_or("none").to_string(), 
+                    artist,
+                    track.song.duration.unwrap_or(std::time::Duration::from_secs(1)).as_secs().to_string()
+                ]
+            }).collect::<Vec<Vec<String>>>();
+
+
+        let header =  vec![
+            TableHeaderItem { text: "#", width: 3 },
+            TableHeaderItem { text: "Title", width: get_percentage_width(layout_chunk.width, 2.0 / 5.0) - 5 },
+            TableHeaderItem { text: "Artist", width: get_percentage_width(layout_chunk.width, 2.0 / 5.0) },
+            // TableHeaderItem { text: "Album", width: get_percentage_width(layout_chunk.width, 2.0 / 5.0) },
+            TableHeaderItem { text: "Length", width: get_percentage_width(layout_chunk.width, 1.0 / 5.0) },
+        ];
+
+        selectable_table(
             f,
             state,
             layout_chunk,
             &self.kind,
+            &header,
             items,
+            self.index.inner,
             highlight_state,
-            Some(self.index.inner)
-        );
+        )
     }
 }
 
@@ -584,4 +627,67 @@ fn selectable_list<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title
     ).style(Style::default().fg(state.theme.text)).highlight_style(colour.add_modifier(Modifier::BOLD));
 
     f.render_stateful_widget(list, layout_chunk, &mut list_state);
+}
+
+pub fn get_percentage_width(width: u16, percentage: f32) -> u16 {
+  let padding = 3;
+  let width = width - padding;
+  (f32::from(width) * percentage) as u16
+}
+
+fn selectable_table<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title: &str, header: &[TableHeaderItem], items: Vec<Vec<String>>, selected_index: usize, highlight_state: (bool, bool)) 
+where B: Backend {
+    // let selected_style = get_color(highlight_state, app.user_config.theme).add_modifier(Modifier::BOLD);
+
+    // let track_playing_index = app.current_playback_context.to_owned().and_then(|ctx| {
+    //     ctx.item.and_then(|item| match item {
+    //         PlayingItem::Track(track) => items.iter()
+    //             .position(|item| track.id.to_owned().map(|id| id == item.id).unwrap_or(false)),
+    //         PlayingItem::Episode(episode) => items.iter().position(|item| episode.id == item.id),
+    //     })
+    // });
+
+    // let (title, header) = table_layout;
+
+
+  //   // Return row styled data
+  //   Row::new(formatted_row).style(style)
+  // });
+
+    let widths = header
+        .iter()
+        .map(|h| Constraint::Length(h.width))
+        .collect::<Vec<tui::layout::Constraint>>();
+
+    let padding = 5;
+    let offset = layout_chunk
+        .height
+        .checked_sub(padding)
+        .and_then(|height| selected_index.checked_sub(height as usize))
+        .unwrap_or(0);
+
+    let colour = get_color(highlight_state, state.theme);
+    let rows = items.iter().skip(offset).enumerate().map(|(i, item)| {
+        let mut formatted_row = item.clone();
+        let mut style = Style::default().fg(state.theme.text);
+
+        if Some(i) == selected_index.checked_sub(offset) {
+            style = colour.add_modifier(Modifier::BOLD);
+        }
+
+        Row::new(formatted_row).style(style)
+    });
+
+    let table = Table::new(rows)
+        .header(Row::new(header.iter().map(|h| h.text))
+            .style(Style::default().fg(state.theme.header)))
+        .block(Block::default()
+            .borders(Borders::ALL)
+            .style(Style::default().fg(state.theme.text))
+            .title(Span::styled(title, colour))
+            .border_style(colour))   
+        .style(Style::default().fg(state.theme.text))
+        .widths(&widths);
+
+    f.render_widget(table, layout_chunk);
 }
