@@ -4,15 +4,13 @@ use crossterm::event;
 pub struct Events;
 pub enum Event {
     Input(Key),
-    Tick
 }
 
 use futures_util::Stream;
-use async_stream::stream;
 
 impl Events {
     pub fn new() -> impl Stream<Item = Event> {
-        stream! {
+        async_stream::stream! {
             loop {
                 if event::poll(Duration::from_millis(250)).unwrap() {
                     if let event::Event::Key(key) = event::read().unwrap() {

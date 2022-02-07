@@ -97,50 +97,46 @@ async fn main() -> Result<()> {
         }
 
         // crossterm events
-        match events.next().await {
-            Some(event::Event::Input(key)) => {
-                if state.blocks.active==Some(Blokka::Search) {
-                    if let event::Key::Char(_) = key {
-                        state.active_event(key).await;
-                        continue;
-                    };
-                }
+        if let Some(event::Event::Input(key)) = events.next().await {
+            if state.blocks.active==Some(Blokka::Search) {
+                if let event::Key::Char(_) = key {
+                    state.active_event(key).await;
+                    continue;
+                };
+            }
 
-                match key {
-                    event::Key::Ctrl('c') => break,
-                    event::Key::Esc => {
+            match key {
+                event::Key::Ctrl('c') => break,
+                event::Key::Esc => {
 
-                        // some nice fluidity
-                        // if let Some(Blokka::Main) = state.blocks.active {
-                        //     let blk = state.blocks.hover_previous(1).clone();
-                        //     state.blocks.set_hover(&blk);
-                        // }
+                    // some nice fluidity
+                    // if let Some(Blokka::Main) = state.blocks.active {
+                    //     let blk = state.blocks.hover_previous(1).clone();
+                    //     state.blocks.set_hover(&blk);
+                    // }
 
-                        state.blocks.active=None
-                    },
+                    state.blocks.active=None
+                },
 
-                    _ if let Some(cmd) = state.keys.0.clone().get(&key) => {
-                        state.handle_keybind(&cmd.clone()).await;
-                    },
+                _ if let Some(cmd) = state.keys.0.clone().get(&key) => {
+                    state.handle_keybind(&cmd.clone()).await;
+                },
 
-                    _ => {
-                        if let None = state.blocks.active {
-                            state.hovered_event(key);
-                        } else {
-                            state.active_event(key).await; 
-                        }
+                _ => {
+                    if let None = state.blocks.active {
+                        state.hovered_event(key);
+                    } else {
+                        state.active_event(key).await; 
                     }
                 }
             }
-
-            _ => {}
         }
 
         // mpd events
-        // match state_changes.poll_next().transpose()? {
-        //     Some(Subsystem::Player) => println!("important"), 
-        //     _ => {}
-        // }
+        match state_changes.poll_next().transpose()? {
+            Some(Subsystem::Player) => println!("important"), 
+            _ => {}
+        }
     }
 
     // close strofa
