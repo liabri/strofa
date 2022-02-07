@@ -317,7 +317,7 @@ impl Main for Tracks {
 
 // eventually access mpd directly from here, need to async it and pass in `client`
 impl Tracks {
-    pub async fn new(kind: &TrackKind, client: Client) -> Self {
+    pub async fn new(kind: TrackKind, client: Client) -> Self {
 
         let tracks: Vec<SongInQueue> = match kind {
             TrackKind::Queue => client.command(commands::Queue).await.unwrap(),
@@ -369,7 +369,7 @@ impl Main for Albums {
 }
 
 impl Albums {
-    pub async fn new(kind: &AlbumKind) -> Self {
+    pub async fn new(kind: AlbumKind) -> Self {
         //use kind to populate tracks
 
         Self {
@@ -524,7 +524,7 @@ impl<B: Backend> Render<B> for SearchResults {
 
 // generics
 pub struct Index {
-    inner: usize,
+    pub inner: usize,
     max: usize,
 }
 

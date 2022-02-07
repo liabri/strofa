@@ -1,4 +1,4 @@
-use crate::block::{ Blokka, MainBlock, Library, SearchResults, Main, Playlists, Search, Sort, Playbar, Tracks, TrackKind };
+use crate::block::{ Blokka, MainBlock, Library, Artists, Albums, SearchResults, Main, Playlists, Search, Sort, Playbar, Tracks, TrackKind, AlbumKind };
 use crate::event::Key;
 use crate::theme::Theme;
 
@@ -24,6 +24,81 @@ impl State {
             client,
         }
     }
+
+    pub async fn handle_keybind(&mut self, cmd: &str) {
+        match cmd {
+            "to_queue" => self.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Queue, self.client.clone()).await)),
+            "search" => self.blocks.set_active(Blokka::Search),
+            _ => {},
+        } 
+    }
+
+    // new blocks are only made here !!
+    pub async fn active_event(&mut self, key: Key) {
+        match self.blocks.active {
+            Some(Blokka::Search) => {
+                match key {
+                    Key::Enter => { 
+                        let query = self.blocks.search.query.clone();
+                        self.blocks.main = MainBlock::SearchResults(SearchResults::new(query).await);
+                        self.blocks.set_active(Blokka::Main);
+                        self.blocks.hovered = Blokka::Main;
+                    },
+
+                    Key::Char(c) => {
+                        self.blocks.search.query.push(c);
+                        self.blocks.search.cursor_position+=1;
+                    },
+
+                    Key::Backspace => {
+                        self.blocks.search.query.pop();
+                        self.blocks.search.cursor_position-=1;
+                    }
+
+                    _ => {}
+                }
+            },
+
+            Some(Blokka::Sort) => {},
+            Some(Blokka::Library) => {
+                match key {
+                    Key::Up => self.blocks.library.index.dec(),
+                    Key::Down => self.blocks.library.index.inc(),
+                    Key::Enter => {
+                        let index = self.blocks.library.index.inner;
+                        let main_block = match self.blocks.library.entries[index] {
+                            "Queue" => MainBlock::Tracks(Tracks::new(TrackKind::Queue, self.client.clone()).await),
+                            "Tracks" => MainBlock::Tracks(Tracks::new(TrackKind::All, self.client.clone()).await),
+                            "Albums" => MainBlock::Albums(Albums::new(AlbumKind::All).await),
+                            "Artists" => MainBlock::Artists(Artists::new().await),
+                            "Podcasts" => MainBlock::Podcasts,
+                            _ => panic!("view not found"),
+                        };
+
+                        self.blocks.set_main(main_block);
+                    }
+                    _ => {},
+                }
+            },
+
+            Some(Blokka::Playlists) => {},
+            Some(Blokka::Error) => {},
+            Some(Blokka::Main) => { 
+                // match key {
+                //     Key::Up => self.main.index().dec(),
+                //     Key::Down => self.main.index().inc(),
+                //     Key::Enter => {
+                //         match blk {
+                //             _ => {} //todo
+                //         }
+                //     }
+                //     _ => {}
+                // }
+            },
+
+            _ => {}
+        }
+    }
 }
 
 pub struct Blocks {    
@@ -46,7 +121,7 @@ impl Blocks {
             library: Library::new().await,
             playlists: Playlists::new().await,
             playbar: Playbar::new().await,
-            main: MainBlock::Tracks(Tracks::new(&TrackKind::Queue, client).await),
+            main: MainBlock::Tracks(Tracks::new(TrackKind::Queue, client).await),
             active: None,
             hovered: Blokka::Library,
             hover_history: VecDeque::new() 
@@ -80,74 +155,8 @@ impl Blocks {
         self.hovered = blk.clone();
     }
 
-    // new blocks are only made here !!
-    pub async fn active_event(&mut self, key: Key) {
-        match self.active {
-            Some(Blokka::Search) => {
-                match key {
-                    Key::Enter => { 
-                        let query = self.search.query.clone();
-                        self.main = MainBlock::SearchResults(SearchResults::new(query).await);
-                        self.set_active(Blokka::Main);
-                        self.hovered = Blokka::Main;
-                    },
-
-                    Key::Char(c) => {
-                        self.search.query.push(c);
-                        self.search.cursor_position+=1;
-                    },
-
-                    Key::Backspace => {
-                        self.search.query.pop();
-                        self.search.cursor_position-=1;
-                    }
-
-                    _ => {}
-                }
-            },
-
-            Some(Blokka::Sort) => {},
-            Some(Blokka::Library) => {
-                match key {
-                    Key::Up => self.library.index.dec(),
-                    Key::Down => self.library.index.inc(),
-                    // Key::Enter => {
-                    //     let index = self.library.index.inner;
-                    //     let main_block = match self.library.entries[index] {
-                    //         "Queue" => MainBlock::Tracks(TrackKind::Queue),
-                    //         "Tracks" => MainBlock::Tracks(TrackKind::All),
-                    //         "Albums" => MainBlock::Albums(AlbumKind::All),
-                    //         "Artists" => MainBlock::Artists,
-                    //         "Podcasts" => MainBlock::Podcasts,
-                    //         _ => panic!("view not found"),
-                    //     };
-
-                    //     state.set_hover(&Blokka::Library);
-                    //     state.main_block = main_block.clone();
-                    //     state.active_block = Blokka::Main(main_block);
-                    //     state.set_hover(&state.active_block.clone());
-                    // }
-                    _ => {},
-                }
-            },
-
-            Some(Blokka::Playlists) => {},
-            Some(Blokka::Error) => {},
-            Some(Blokka::Main) => { 
-                // match key {
-                //     Key::Up => self.main.index().dec(),
-                //     Key::Down => self.main.index().inc(),
-                //     Key::Enter => {
-                //         match blk {
-                //             _ => {} //todo
-                //         }
-                //     }
-                //     _ => {}
-                // }
-            },
-
-            _ => {}
-        }
+    pub fn hover_previous(&mut self, idx: usize) -> &Blokka {
+        self.hover_history.get(idx).unwrap_or(&Blokka::Search)
     }
 
     pub fn hovered_event(&mut self, key: Key) {
