@@ -330,7 +330,6 @@ impl Main for Tracks {
 // eventually access mpd directly from here, need to async it and pass in `client`
 impl Tracks {
     pub async fn new(kind: TrackKind, client: Client) -> Self {
-
         let tracks: Vec<SongInQueue> = match kind {
             TrackKind::Queue => client.command(commands::Queue).await.unwrap(),
              _ => Vec::new(),
@@ -341,6 +340,11 @@ impl Tracks {
             index: Index::new(50),
             tracks,
         }
+    }
+
+    pub async fn play(&self, client: Client, index: usize) {
+        let song = self.tracks.get(index).unwrap().id;
+        client.command(commands::Play::song(song)).await.unwrap();
     }
 }
 
