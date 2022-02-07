@@ -5,7 +5,7 @@ mod state;
 use state::State;
 
 mod block;
-use block::{ Blokka };
+use block::Blokka;
 
 mod event;
 mod theme;
