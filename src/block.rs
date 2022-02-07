@@ -1,8 +1,6 @@
 use crate::state::State;
 use crate::theme::get_color;
-use crate::event::Key;
 
-use anyhow::Result;
 use mpd_client::commands::responses::{ Song, SongInQueue, Playlist };
 use mpd_client::{ Client, commands };
 
