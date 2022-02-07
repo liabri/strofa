@@ -111,6 +111,7 @@ async fn main() -> Result<()> {
                 }
 
                 match key {
+                    event::Key::Ctrl('c') => break,
                     event::Key::Esc => {
 
                         // some nice fluidity
@@ -121,8 +122,6 @@ async fn main() -> Result<()> {
 
                         state.blocks.active=None
                     },
-
-                    event::Key::Ctrl('c') => break,
 
                     _ if let Some(cmd) = state.keys.0.clone().get(&key) => {
                         state.handle_keybind(&cmd.clone()).await;
@@ -139,16 +138,19 @@ async fn main() -> Result<()> {
             }
         
             Some(event::Event::Tick) => {
-                loop {
-                    match state_changes.next().await.transpose()? {
-                        None => {},//break 'outer,             // connection was closed by the server
-                        Some(Subsystem::Player) => {
-                            state.blocks.set_active(Blokka::Search);
-                            println!("pppppp"); break;
-                        }, // something relevant changed
-                        Some(_) => continue,              // something changed but we don't care
-                    }
-                }
+                // loop {
+                //     match state_changes.next().await.transpose()? {
+                //         None => {},//break 'outer,             // connection was closed by the server
+                //         Some(Subsystem::Player) => {
+                //             state.blocks.set_active(Blokka::Search);
+                //             println!("pppppp"); break;
+                //         }, // something relevant changed
+
+                //         Some(_) => {},              // something changed but we don't care
+                //     }
+                // }
+
+
                 // if let Some(CurrentlyPlaybackContext {
                 //     item: Some(item),
                 //     progress_ms: Some(progress_ms),
