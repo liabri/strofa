@@ -14,13 +14,10 @@ impl Events {
     pub fn new() -> impl Stream<Item = Event> {
         stream! {
             loop {
-
                 if event::poll(Duration::from_millis(250)).unwrap() {
                     if let event::Event::Key(key) = event::read().unwrap() {
                         yield Event::Input(Key::from(key))
                     }
-                } else {
-                    yield Event::Tick
                 }
             }
         }
