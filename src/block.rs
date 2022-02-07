@@ -4,6 +4,7 @@ use crate::event::Key;
 
 use anyhow::Result;
 use mpd_client::commands::responses::{ Song, SongInQueue, Playlist };
+use mpd_client::{ Client, commands };
 
 use tui::{
     backend::Backend,
@@ -80,8 +81,8 @@ pub struct Library {
    pub index: Index 
 }
 
-impl Default for Library {
-    fn default() -> Self {
+impl Library {
+    pub async fn new() -> Self {
         Self {
             entries: [
                 "Queue",
@@ -124,8 +125,8 @@ pub struct Playlists {
    pub index: Index 
 }
 
-impl Default for Playlists {
-    fn default() -> Self {
+impl Playlists {
+    pub async fn new() -> Self {
         Self {
             entries: Vec::new(),
             index: Index::new(50),
@@ -192,8 +193,8 @@ pub struct Sort {
     pub index: Index 
 }
 
-impl Default for Sort {
-    fn default() -> Self {
+impl Sort {
+    pub async fn new() -> Self {
         Self {
             entries: [
                 "Date of Release",
@@ -231,8 +232,8 @@ pub struct Playbar {
     pub song: Option<SongInQueue>,
 }
 
-impl Default for Playbar {
-    fn default() -> Self {
+impl Playbar {
+    pub async fn new() -> Self {
         Self { 
             song: None,
         }
@@ -316,7 +317,13 @@ impl Main for Tracks {
 
 // eventually access mpd directly from here, need to async it and pass in `client`
 impl Tracks {
-    pub fn new(kind: &TrackKind, tracks: Vec<SongInQueue>) -> Self {
+    pub async fn new(kind: &TrackKind, client: Client) -> Self {
+
+        let tracks: Vec<SongInQueue> = match kind {
+            TrackKind::Queue => client.command(commands::Queue).await.unwrap(),
+             _ => Vec::new(),
+        };
+
         Self {
             kind: kind.to_string(),
             index: Index::new(50),
@@ -362,7 +369,7 @@ impl Main for Albums {
 }
 
 impl Albums {
-    fn new(kind: &AlbumKind) -> Self {
+    pub async fn new(kind: &AlbumKind) -> Self {
         //use kind to populate tracks
 
         Self {
@@ -405,7 +412,7 @@ impl Main for Artists {
 }
 
 impl Artists {
-    fn new() -> Self {
+    pub async fn new() -> Self {
         Self {
             index: Index::new(50),
         }
@@ -445,7 +452,7 @@ impl Main for Podcasts {
 }
 
 impl Podcasts {
-    fn new() -> Self {
+    pub async fn new() -> Self {
         Self {
             index: Index::new(50),
         }
@@ -486,7 +493,7 @@ impl Main for SearchResults {
 }
 
 impl SearchResults {
-    pub fn new(query: String) -> Self {
+    pub async fn new(query: String) -> Self {
         Self {
             query,
             index: Index::new(50),
