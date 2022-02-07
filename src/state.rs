@@ -28,8 +28,18 @@ impl State {
     pub async fn handle_keybind(&mut self, cmd: &str) {
         match cmd {
             "to_queue" => self.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Queue, self.client.clone()).await)),
+            "to_playlists" => self.blocks.set_active(Blokka::Playlists),
             "search" => self.blocks.set_active(Blokka::Search),
+            
             "toggle_playback" => self.blocks.playbar.toggle(self.client.clone()).await,
+            "decrease_volume" => self.blocks.playbar.set_volume(-5, self.client.clone()).await,
+            "increase_volume" => self.blocks.playbar.set_volume(5, self.client.clone()).await,
+            "decrease_volume_big" => self.blocks.playbar.set_volume(-10, self.client.clone()).await,
+            "increase_volume_big" => self.blocks.playbar.set_volume(10, self.client.clone()).await,
+
+
+            // "jump_to_start" => self.blocks.playbar.jump_to_start(self.client.clone()).await,
+
             _ => {},
         } 
     }
@@ -201,7 +211,7 @@ impl Blocks {
             sort: Sort::new().await,
             library: Library::new().await,
             playlists: Playlists::new().await,
-            playbar: Playbar::new().await,
+            playbar: Playbar::new(client.clone()).await,
             main: MainBlock::Tracks(Tracks::new(TrackKind::Queue, client).await),
             active: None,
             hovered: Blokka::Library,
@@ -250,9 +260,6 @@ impl Default for KeyBindings {
         map.insert(Key::Char('q'), "to_queue".to_string());
         map.insert(Key::Char('e'), "to_playlists".to_string());
 
-        map.insert(Key::Char('d'), "next_page".to_string());
-        map.insert(Key::Char('a'), "previous_page".to_string());
-
         map.insert(Key::Char('v'), "jump_to_start".to_string());
         map.insert(Key::Char('z'), "jump_to_end".to_string());
         map.insert(Key::Char('f'), "jump_to_album".to_string());
@@ -260,6 +267,9 @@ impl Default for KeyBindings {
 
         map.insert(Key::Char('-'), "decrease_volume".to_string());
         map.insert(Key::Char('+'), "increase_volume".to_string());
+        // map.insert(Key::Shift('-'), "decrease_volume_big".to_string());
+        // map.insert(Key::Shift('+'), "increase_volume_big".to_string());
+
         map.insert(Key::Char(' '), "toggle_playback".to_string());
         map.insert(Key::Char('<'), "seek_backwards".to_string());
         map.insert(Key::Char('>'), "seek_forwards".to_string());
