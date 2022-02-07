@@ -1,4 +1,4 @@
-use crate::block::{ Blokka, MainBlock, Library, Artists, Albums, SearchResults, Main, Playlists, Search, Sort, Playbar, Tracks, TrackKind, AlbumKind };
+use crate::block::{ Blokka, MainBlock, Library, Podcasts, Artists, Albums, SearchResults, Main, Playlists, Search, Sort, Playbar, Tracks, TrackKind, AlbumKind };
 use crate::event::Key;
 use crate::theme::Theme;
 
@@ -71,7 +71,7 @@ impl State {
                             "Tracks" => MainBlock::Tracks(Tracks::new(TrackKind::All, self.client.clone()).await),
                             "Albums" => MainBlock::Albums(Albums::new(AlbumKind::All).await),
                             "Artists" => MainBlock::Artists(Artists::new().await),
-                            "Podcasts" => MainBlock::Podcasts,
+                            "Podcasts" => MainBlock::Podcasts(Podcasts::new().await),
                             _ => panic!("view not found"),
                         };
 
@@ -84,16 +84,16 @@ impl State {
             Some(Blokka::Playlists) => {},
             Some(Blokka::Error) => {},
             Some(Blokka::Main) => { 
-                // match key {
-                //     Key::Up => self.main.index().dec(),
-                //     Key::Down => self.main.index().inc(),
+                match key {
+                    Key::Up => self.blocks.main.index().dec(),
+                    Key::Down => self.blocks.main.index().inc(),
                 //     Key::Enter => {
                 //         match blk {
                 //             _ => {} //todo
                 //         }
                 //     }
-                //     _ => {}
-                // }
+                    _ => {}
+                }
             },
 
             _ => {}
