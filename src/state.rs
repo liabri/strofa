@@ -101,6 +101,85 @@ impl State {
             _ => {}
         }
     }
+
+    pub fn hovered_event(&mut self, key: Key) {
+        match self.blocks.hovered {
+            Blokka::Search => {
+                match key {
+                    Key::Down => {
+                        for previous in self.blocks.hover_history.clone().into_iter() {
+                            if previous == Blokka::Library || previous == Blokka::Main {
+                                self.blocks.set_hover(&previous);
+                                return;  
+                            }
+                        }
+
+                        self.blocks.set_hover(&Blokka::Library)
+                    },
+
+                    Key::Right => self.blocks.set_hover(&Blokka::Sort),
+                    _ => {},
+                }
+            },
+
+            Blokka::Sort => {
+                match key {
+                    Key::Left => self.blocks.set_hover(&Blokka::Search),
+                    Key::Down => self.blocks.set_hover(&Blokka::Main),
+                    _ => {},
+                }
+            },
+
+            Blokka::Library => {
+                match key {
+                    Key::Up => self.blocks.set_hover(&Blokka::Search),
+                    Key::Down => self.blocks.set_hover(&Blokka::Playlists),
+                    Key::Right => self.blocks.set_hover(&Blokka::Main),
+                    _ => {},
+                }
+            },
+
+            Blokka::Playlists => {
+                match key {
+                    Key::Up => self.blocks.set_hover(&Blokka::Library),
+                    Key::Right => self.blocks.set_hover(&Blokka::Main),
+                    _ => {},
+                }
+            },
+
+            Blokka::Main => {
+                match key {
+                    Key::Up => self.blocks.set_hover(&Blokka::Search),
+                    Key::Left => {
+                        for previous in self.blocks.hover_history.clone().into_iter() {
+                            if previous==Blokka::Library || previous==Blokka::Playlists {
+                                self.blocks.set_hover(&previous);
+                                return;
+                            }
+                        }
+
+                        self.blocks.set_hover(&Blokka::Library)
+                    },
+
+                    Key::Right => self.blocks.set_hover(&Blokka::Sort),
+                    Key::Down => {
+                        self.blocks.set_active(Blokka::Main);
+                        self.blocks.main.index().inc();
+                    },
+
+                    _ => {},
+                }
+            },
+
+            _ => {}   
+        }
+
+        // common behaviour
+        match key {
+            Key::Enter => self.blocks.set_active(self.blocks.hovered),
+            _ => {}
+        }
+    }      
 }
 
 pub struct Blocks {    
@@ -159,81 +238,7 @@ impl Blocks {
 
     pub fn hover_previous(&mut self, idx: usize) -> &Blokka {
         self.hover_history.get(idx).unwrap_or(&Blokka::Search)
-    }
-
-    pub fn hovered_event(&mut self, key: Key) {
-        match self.hovered {
-            Blokka::Search => {
-                match key {
-                    Key::Down => {
-                        for previous in self.hover_history.clone().into_iter() {
-                            if previous == Blokka::Library || previous == Blokka::Main {
-                                self.set_hover(&previous);
-                                return;  
-                            }
-                        }
-
-                        self.set_hover(&Blokka::Library)
-                    },
-
-                    Key::Right => self.set_hover(&Blokka::Sort),
-                    _ => {},
-                }
-            },
-
-            Blokka::Sort => {
-                match key {
-                    Key::Left => self.set_hover(&Blokka::Search),
-                    Key::Down => self.set_hover(&Blokka::Main),
-                    _ => {},
-                }
-            },
-
-            Blokka::Library => {
-                match key {
-                    Key::Up => self.set_hover(&Blokka::Search),
-                    Key::Down => self.set_hover(&Blokka::Playlists),
-                    Key::Right => self.set_hover(&Blokka::Main),
-                    _ => {},
-                }
-            },
-
-            Blokka::Playlists => {
-                match key {
-                    Key::Up => self.set_hover(&Blokka::Library),
-                    Key::Right => self.set_hover(&Blokka::Main),
-                    _ => {},
-                }
-            },
-
-            Blokka::Main => {
-                match key {
-                    Key::Up => self.set_hover(&Blokka::Search),
-                    Key::Left => {
-                        for previous in self.hover_history.clone().into_iter() {
-                            if previous==Blokka::Library || previous==Blokka::Playlists {
-                                self.set_hover(&previous);
-                                return;
-                            }
-                        }
-
-                        self.set_hover(&Blokka::Library)
-                    },
-
-                    Key::Right => self.set_hover(&Blokka::Sort),
-                    _ => {},
-                }
-            },
-
-            _ => {}   
-        }
-
-        // common behaviour
-        match key {
-            Key::Enter => self.set_active(self.hovered),
-            _ => {}
-        }
-    }    
+    }  
 }
 
 pub struct KeyBindings(pub HashMap<Key, String>);
