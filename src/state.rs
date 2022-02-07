@@ -87,11 +87,12 @@ impl State {
                 match key {
                     Key::Up => self.blocks.main.index().dec(),
                     Key::Down => self.blocks.main.index().inc(),
-                //     Key::Enter => {
-                //         match blk {
-                //             _ => {} //todo
-                //         }
-                //     }
+                    Key::Enter => {
+                        match &self.blocks.main {
+                            MainBlock::Tracks(x) => x.play(self.client.clone(), x.index.inner).await,
+                            _ => {} //todo
+                        }
+                    }
                     _ => {}
                 }
             },
