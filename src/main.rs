@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    let mut state = State::new();
+    let mut state = State::new(client).await;
     let events = event::Events::new();
     futures_util::pin_mut!(events);
 
@@ -106,7 +106,7 @@ async fn main() -> Result<()> {
 
                 if state.blocks.active==Some(Blokka::Search) {
                     if let event::Key::Char(_) = key {
-                        state.blocks.active_event(key);
+                        state.blocks.active_event(key).await;
                         continue;
                     };
                 }
@@ -119,10 +119,7 @@ async fn main() -> Result<()> {
 
                         //move this match into either State or Blocks
                         match cmd.as_str() {
-                            "to_queue" => {
-                                let songs = client.command(commands::Queue).await.unwrap();
-                                state.blocks.set_main(block::MainBlock::Tracks(block::Tracks::new(&block::TrackKind::Queue, songs)));
-                            },
+                            // "to_queue" => state.blocks.set_main(block::MainBlock::Tracks(block::Tracks::new(&block::TrackKind::Queue).await)),
                             "search" => state.blocks.set_active(Blokka::Search),
                             _ => {},
                         } 

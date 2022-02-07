@@ -4,21 +4,24 @@ use crate::theme::Theme;
 
 use std::collections::{ VecDeque, HashMap };
 use tui::layout::Rect;
+use mpd_client::Client;
 
 pub struct State {
     pub blocks: Blocks,
     pub size: Rect,
     pub theme: Theme,
     pub keys: KeyBindings,
+    pub client: Client
 }
 
 impl State {
-    pub fn new() -> Self {
+    pub async fn new(client: Client) -> Self {
         Self {
-            blocks: Blocks::new(),
+            blocks: Blocks::new(client.clone()).await,
             size: Rect::default(),
             theme: Theme::default(),
             keys: KeyBindings::default(),
+            client,
         }
     }
 }
@@ -36,14 +39,14 @@ pub struct Blocks {
 }
 
 impl Blocks {
-    pub fn new() -> Self {
+    pub async fn new(client: Client) -> Self {
         Self {
             search: Search::default(),
-            sort: Sort::default(),
-            library: Library::default(),
-            playlists: Playlists::default(),
-            playbar: Playbar::default(),
-            main: MainBlock::Tracks(Tracks::new(&TrackKind::Queue, Vec::new())),
+            sort: Sort::new().await,
+            library: Library::new().await,
+            playlists: Playlists::new().await,
+            playbar: Playbar::new().await,
+            main: MainBlock::Tracks(Tracks::new(&TrackKind::Queue, client).await),
             active: None,
             hovered: Blokka::Library,
             hover_history: VecDeque::new() 
@@ -78,13 +81,13 @@ impl Blocks {
     }
 
     // new blocks are only made here !!
-    pub fn active_event(&mut self, key: Key) {
+    pub async fn active_event(&mut self, key: Key) {
         match self.active {
             Some(Blokka::Search) => {
                 match key {
                     Key::Enter => { 
                         let query = self.search.query.clone();
-                        self.main = MainBlock::SearchResults(SearchResults::new(query));
+                        self.main = MainBlock::SearchResults(SearchResults::new(query).await);
                         self.set_active(Blokka::Main);
                         self.hovered = Blokka::Main;
                     },
