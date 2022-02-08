@@ -15,14 +15,14 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(client: Client) -> Self {
-        Self {
-            blocks: Blocks::new(client.clone()).await,
+    pub async fn new(client: Client) -> Result<Self> {
+        Ok(Self {
+            blocks: Blocks::new(client.clone()).await?,
             size: Rect::default(),
             theme: Theme::default(),
             keys: KeyBindings::default(),
             client,
-        }
+        })
     }
 
     pub async fn handle_keybind(&mut self, cmd: &str) -> Result<()> {
@@ -213,18 +213,18 @@ pub struct Blocks {
 }
 
 impl Blocks {
-    pub async fn new(client: Client) -> Self {
-        Self {
+    pub async fn new(client: Client) -> Result<Self> {
+        Ok(Self {
             search: Search::default(),
             sort: Sort::new().await,
             library: Library::new().await,
-            playlists: Playlists::new().await,
+            playlists: Playlists::new(client.clone()).await?,
             playbar: Playbar::new(client.clone()).await,
             main: MainBlock::Tracks(Tracks::new(TrackKind::Queue, client).await),
             active: None,
             hovered: Blokka::Library,
             hover_history: VecDeque::new() 
-        }
+        })
     }
 
     pub fn is_hovered(&self, blk: Blokka) -> bool {
