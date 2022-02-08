@@ -1,4 +1,4 @@
-use crate::block::{ Blokka, MainBlock, Library, Podcasts, Artists, Albums, SearchResults, Main, Playlists, Search, Sort, Playbar, Tracks, TrackKind, AlbumKind };
+use crate::block::{ Blokka, MainBlock, Library, Podcasts, Artists, Queue, Albums, SearchResults, Main, Playlists, Search, Sort, Playbar, Tracks, TrackKind, AlbumKind };
 use crate::event::Key;
 use crate::theme::Theme;
 
@@ -27,10 +27,12 @@ impl State {
 
     pub async fn handle_keybind(&mut self, cmd: &str) -> Result<()> {
         match cmd {
-            "to_queue" => self.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Queue, self.client.clone()).await?)),
+            // binds manipulating ui
+            "to_queue" => self.blocks.set_main(MainBlock::Queue(Queue::new(self.client.clone()).await?)),
             "to_playlists" => self.blocks.set_active(Blokka::Playlists),
             "search" => self.blocks.set_active(Blokka::Search),
-            
+          
+            // binds manipulating mpd  
             "toggle_playback" => self.client.toggle_playback().await?,
             "decrease_volume" => self.client.set_volume(-5).await?,
             "increase_volume" => self.client.set_volume(5).await?,
@@ -86,7 +88,7 @@ impl State {
                     Key::Enter => {
                         let index = self.blocks.library.index.inner;
                         let main_block = match self.blocks.library.entries[index] {
-                            "Queue" => MainBlock::Tracks(Tracks::new(TrackKind::Queue, self.client.clone()).await.unwrap()),
+                            "Queue" => MainBlock::Queue(Queue::new(self.client.clone()).await.unwrap()),
                             "Tracks" => MainBlock::Tracks(Tracks::new(TrackKind::All, self.client.clone()).await.unwrap()),
                             "Albums" => MainBlock::Albums(Albums::new(AlbumKind::All).await),
                             "Artists" => MainBlock::Artists(Artists::new().await),
@@ -121,6 +123,7 @@ impl State {
                     Key::Enter => {
                         match &self.blocks.main {
                             MainBlock::Tracks(x) => x.play(self.client.clone(), x.index.inner).await,
+                            MainBlock::Queue(x) => x.play(self.client.clone(), x.index.inner).await,
                             _ => {} //todo
                         }
                     }
@@ -232,7 +235,7 @@ impl Blocks {
             library: Library::new().await,
             playlists: Playlists::new(client.clone()).await?,
             playbar: Playbar::new(client.clone()).await,
-            main: MainBlock::Tracks(Tracks::new(TrackKind::Queue, client).await?),
+            main: MainBlock::Queue(Queue::new(client).await?),
             active: None,
             hovered: Blokka::Library,
             hover_history: VecDeque::new() 
@@ -264,10 +267,6 @@ impl Blocks {
         self.hover_history.truncate(5);
         self.hover_history.push_front(self.hovered.clone());
         self.hovered = blk.clone();
-    }
-
-    pub fn hover_previous(&mut self, idx: usize) -> &Blokka {
-        self.hover_history.get(idx).unwrap_or(&Blokka::Search)
     }  
 }
 

@@ -1,52 +1,40 @@
 use super::{ Blokka, State, Render, TableHeaderItem, Main, Index, selectable_table, get_percentage_width };
-use mpd_client::{ Client, commands, commands::responses::Song };
+use mpd_client::{ Client, commands, commands::responses::SongInQueue };
 use tui::{ backend::Backend, layout::Rect, Frame };
 use anyhow::Result;
 
-pub struct Tracks {
+pub struct Queue {
     pub index: Index,
-    pub kind: String,
-    pub tracks: Vec<Song>,
+    pub songs: Vec<SongInQueue>,
 }
 
-pub enum TrackKind {
-    Album(String),
-    Artist(String),
-    Playlist(String),
-    All,
-}
-
-impl Tracks {
-    pub async fn new(kind: TrackKind, client: Client) -> Result<Self> {
-        let tracks: Vec<Song> = match kind {
-            TrackKind::Playlist(ref name) => client.command(commands::GetPlaylist(name.to_string())).await?,
-             _ => Vec::new(),
-        };
+impl Queue {
+    pub async fn new(client: Client) -> Result<Self> {
+        let songs = client.command(commands::Queue).await?;
 
         Ok(Self {
-            kind: kind.to_string(),
-            index: Index::new(tracks.len()),
-            tracks,
+            index: Index::new(songs.len()),
+            songs,
         })
     }
 
     pub async fn play(&self, client: Client, index: usize) {
-        // let song = self.tracks.get(index).unwrap();
-        // client.command(commands::Play::song(song)).await.unwrap();
+        let song = self.songs.get(index).unwrap().id;
+        client.command(commands::Play::song(song)).await.unwrap();
     }
 }
 
-impl<B: Backend> Render<B> for Tracks {
+impl<B: Backend> Render<B> for Queue {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
             state.blocks.is_active(Blokka::Main),
             state.blocks.is_hovered(Blokka::Main)
         );
 
-        let items = self.tracks
+        let items = self.songs
             .iter()
-            .map(|track| { 
-                let artists = track.artists();
+            .map(|song| { 
+                let artists = song.song.artists();
                 let artist = if artists.len() > 0 {
                     artists[0].to_string()
                 } else {
@@ -56,10 +44,10 @@ impl<B: Backend> Render<B> for Tracks {
                 //if title is empty, take file name
 
                 vec![
-                    String::from("0"),// track.position.0.to_string(), 
-                    track.title().unwrap_or("none").to_string(), 
+                    song.position.0.to_string(), 
+                    song.song.title().unwrap_or("none").to_string(), 
                     artist,
-                    track.duration.unwrap_or(std::time::Duration::from_secs(1)).as_secs().to_string()
+                    song.song.duration.unwrap_or(std::time::Duration::from_secs(1)).as_secs().to_string()
                 ]
             }).collect::<Vec<Vec<String>>>();
 
@@ -76,7 +64,7 @@ impl<B: Backend> Render<B> for Tracks {
             f,
             state,
             layout_chunk,
-            &self.kind,
+            " Queue ",
             &header,
             items,
             self.index.inner,
@@ -85,19 +73,8 @@ impl<B: Backend> Render<B> for Tracks {
     }
 }
 
-impl Main for Tracks {
+impl Main for Queue {
     fn index(&mut self) -> &mut Index {
         &mut self.index
-    }
-}
-
-impl std::fmt::Display for TrackKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            TrackKind::Album(s) => write!(f, " Album {} ", s),
-            TrackKind::Artist(s) => write!(f, " Artist {} ", s),
-            TrackKind::Playlist(s) => write!(f, " Playlist ───┤ {} ├", s),
-            TrackKind::All => write!(f, " Tracks ")
-        }
     }
 }

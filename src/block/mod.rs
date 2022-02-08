@@ -26,6 +26,9 @@ pub use sort::Sort;
 mod tracks;
 pub use tracks::{ Tracks, TrackKind };
 
+mod queue;
+pub use queue::Queue;
+
 pub use crate::state::State;
 pub use crate::theme::get_color;
 
@@ -170,7 +173,7 @@ where B: Backend {
 
     let colour = get_color(highlight_state, state.theme);
     let rows = items.iter().skip(offset).enumerate().map(|(i, item)| {
-        let mut formatted_row = item.clone();
+        let formatted_row = item.clone();
         let mut style = Style::default().fg(state.theme.text);
 
         if Some(i) == selected_index.checked_sub(offset) {
@@ -210,7 +213,8 @@ pub enum MainBlock {
     Artists(Artists),
     Albums(Albums),
     Tracks(Tracks),
-    Podcasts(Podcasts)
+    Podcasts(Podcasts),
+    Queue(Queue)
 }
 
 impl<B: Backend> Render<B> for MainBlock {
@@ -221,6 +225,7 @@ impl<B: Backend> Render<B> for MainBlock {
             MainBlock::Albums(x) => x.render(f, state, layout_chunk),
             MainBlock::Tracks(x) => x.render(f, state, layout_chunk),
             MainBlock::Podcasts(x) => x.render(f, state, layout_chunk),
+            MainBlock::Queue(x) => x.render(f, state, layout_chunk),
 
         }
     }
@@ -234,6 +239,7 @@ impl Main for MainBlock {
             MainBlock::Albums(x) => x.index(), 
             MainBlock::Tracks(x) => x.index(), 
             MainBlock::Podcasts(x) => x.index(), 
+            MainBlock::Queue(x) => x.index(),
         }
     }
 }
