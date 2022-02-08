@@ -5,7 +5,7 @@ mod state;
 use state::State;
 
 mod block;
-use block::Blokka;
+use block::{ Blokka, Playbar };
 
 mod event;
 mod theme;
@@ -56,7 +56,7 @@ async fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    let mut state = State::new(client).await;
+    let mut state = State::new(client.clone()).await;
     let events = event::Events::new();
     futures_util::pin_mut!(events);
 
@@ -135,18 +135,29 @@ async fn main() -> Result<()> {
         // mpd events
         match futures::poll!(state_changes.next()) {
             futures::task::Poll::Ready(x) => {
+                state.blocks.active=Some(Blokka::Search);
+
                 match x.transpose()? {
-                    Some(Subsystem::Player) => println!("player update"), 
-                    Some(Subsystem::Queue) => {},
+                    Some(Subsystem::Player) => state.blocks.playbar=Playbar::new(client.clone()).await, 
+                    Some(Subsystem::Queue) => {println!("queue")},
                     Some(Subsystem::StoredPlaylist) => {},
                     Some(Subsystem::Update) => {}
                     Some(Subsystem::Database) => {}
-                    _ => { println!("BIGBOY"); }
+                    _ => { continue; }
                 }
             },
 
             futures::task::Poll::Pending => {}
         }
+
+        // match state_changes.next().await.transpose()? {
+        //     Some(Subsystem::Player) => state.blocks.playbar=Playbar::new(client.clone()).await, 
+        //     Some(Subsystem::Queue) => {println!("queue")},
+        //     Some(Subsystem::StoredPlaylist) => {},
+        //     Some(Subsystem::Update) => {}
+        //     Some(Subsystem::Database) => {}
+        //     _ => { continue; }
+        // }        
     }
 
     // close strofa

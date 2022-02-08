@@ -1,4 +1,5 @@
 use super::{ State, Render };
+use std::time::Duration;
 use mpd_client::{ Client, commands, commands::responses::{ SongInQueue, PlayState }};
 use tui::{ 
     Frame,
@@ -11,16 +12,25 @@ use tui::{
 
 pub struct Playbar {
     pub song: Option<SongInQueue>,
+    pub volume: u8,
+    pub shuffle: bool,
+    pub repeat: bool,
     // pub history: Vec<SingInQueue>,
 }
 
 impl Playbar {
     pub async fn new(client: Client) -> Self {
+        let status = client.command(commands::Status).await.unwrap();
+
         Self { 
             song: client.command(commands::CurrentSong).await.unwrap(),
+            volume: status.volume,
+            shuffle: status.random,
+            repeat: status.repeat
         }
     }
 
+    //move to functions.rs or something
     pub async fn toggle(&self, client: Client) {
         let status = client.command(commands::Status).await.unwrap();
         match status.state {
@@ -43,6 +53,32 @@ impl Playbar {
         };
 
         client.command(commands::SetVolume(vol.try_into().unwrap())).await.unwrap();
+    }
+
+    pub async fn next_track(&self, client: Client) {
+        client.command(commands::Next).await.unwrap();
+    }
+
+    pub async fn previous_track(&self, client: Client) {
+        client.command(commands::Previous).await.unwrap();
+    }
+
+    pub async fn seek_forwards(&self, o: u64, client: Client) {
+        client.command(commands::Seek(commands::SeekMode::Forward(Duration::from_secs(o)))).await.unwrap();
+    }
+
+    pub async fn seek_backwards(&self, o: u64, client: Client) {
+        client.command(commands::Seek(commands::SeekMode::Backward(Duration::from_secs(o)))).await.unwrap();
+    }
+
+    pub async fn toggle_shuffle(&self, client: Client) {
+        let current_shuffle = client.command(commands::Status).await.unwrap().random;
+        client.command(commands::SetRandom(!current_shuffle)).await.unwrap();
+    }
+
+    pub async fn toggle_repeat(&self, client: Client) {
+        let current_repeat = client.command(commands::Status).await.unwrap().repeat;
+        client.command(commands::SetRepeat(!current_repeat)).await.unwrap();
     }
 
     // pub async fn jump_to_start(&self, client: Client) {
