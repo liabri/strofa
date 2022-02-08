@@ -45,6 +45,12 @@ pub trait Render<B: Backend> {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect);
 }
 
+//eventually move key events from state to each individual block.
+// pub trait KeyEvent {
+// 	async fn active_event(&self, key: Key);
+//     async fn hovered_event(&self, key: Key) {
+// }
+
 #[derive(Copy, Clone, PartialEq)]
 pub enum Blokka {
     Search,
@@ -52,9 +58,14 @@ pub enum Blokka {
     Library,
     Playlists,
     Playbar,
-    Error, //todo popup
-    // Help, //todo popup, will contains all shortcuts
-    Main//(MainBlock)
+    // Standard,
+    // Popup,
+    Main
+}
+
+pub enum Popup {
+	Help,
+	Error
 }
 
 pub fn top<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
@@ -109,7 +120,7 @@ impl Index {
     pub fn new(max: usize) -> Self {
         Index {
             inner: 0,
-            max: max-1,
+            max: max,
         }
     }
 
@@ -200,7 +211,6 @@ pub enum MainBlock {
     Tracks(Tracks),
     Podcasts(Podcasts)
 }
-
 
 impl<B: Backend> Render<B> for MainBlock {
     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {

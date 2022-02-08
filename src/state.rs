@@ -27,7 +27,7 @@ impl State {
 
     pub async fn handle_keybind(&mut self, cmd: &str) -> Result<()> {
         match cmd {
-            "to_queue" => self.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Queue, self.client.clone()).await)),
+            "to_queue" => self.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Queue, self.client.clone()).await?)),
             "to_playlists" => self.blocks.set_active(Blokka::Playlists),
             "search" => self.blocks.set_active(Blokka::Search),
             
@@ -86,8 +86,8 @@ impl State {
                     Key::Enter => {
                         let index = self.blocks.library.index.inner;
                         let main_block = match self.blocks.library.entries[index] {
-                            "Queue" => MainBlock::Tracks(Tracks::new(TrackKind::Queue, self.client.clone()).await),
-                            "Tracks" => MainBlock::Tracks(Tracks::new(TrackKind::All, self.client.clone()).await),
+                            "Queue" => MainBlock::Tracks(Tracks::new(TrackKind::Queue, self.client.clone()).await.unwrap()),
+                            "Tracks" => MainBlock::Tracks(Tracks::new(TrackKind::All, self.client.clone()).await.unwrap()),
                             "Albums" => MainBlock::Albums(Albums::new(AlbumKind::All).await),
                             "Artists" => MainBlock::Artists(Artists::new().await),
                             "Podcasts" => MainBlock::Podcasts(Podcasts::new().await),
@@ -100,8 +100,20 @@ impl State {
                 }
             },
 
-            Some(Blokka::Playlists) => {},
-            Some(Blokka::Error) => {},
+            Some(Blokka::Playlists) => {
+                match key {
+                    Key::Up => self.blocks.playlists.index.dec(),
+                    Key::Down => self.blocks.playlists.index.inc(),   
+                    Key::Enter => {
+                        let index = self.blocks.playlists.index.inner;  
+                        let name = self.blocks.playlists.entries.get(0).unwrap().name.to_string();
+                        self.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Playlist(name), self.client.clone()).await.unwrap()));
+                    },
+
+                    _ => {}
+                }  
+            },
+
             Some(Blokka::Main) => { 
                 match key {
                     Key::Up => self.blocks.main.index().dec(),
@@ -220,7 +232,7 @@ impl Blocks {
             library: Library::new().await,
             playlists: Playlists::new(client.clone()).await?,
             playbar: Playbar::new(client.clone()).await,
-            main: MainBlock::Tracks(Tracks::new(TrackKind::Queue, client).await),
+            main: MainBlock::Tracks(Tracks::new(TrackKind::Queue, client).await?),
             active: None,
             hovered: Blokka::Library,
             hover_history: VecDeque::new() 
