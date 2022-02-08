@@ -187,7 +187,8 @@ where B: Backend {
             .borders(Borders::ALL)
             .style(Style::default().fg(state.theme.text))
             .title(Span::styled(title, colour))
-            .border_style(colour))   
+            .border_style(colour)
+            .border_type(BorderType::Rounded))   
         .style(Style::default().fg(state.theme.text))
         .widths(&widths);
 
