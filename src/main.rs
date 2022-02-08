@@ -119,7 +119,7 @@ async fn main() -> Result<()> {
                 },
 
                 _ if let Some(cmd) = state.keys.0.clone().get(&key) => {
-                    state.handle_keybind(&cmd.clone()).await;
+                    state.handle_keybind(&cmd.clone()).await?;
                 },
 
                 _ => {

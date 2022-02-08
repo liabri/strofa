@@ -25,29 +25,31 @@ impl State {
         }
     }
 
-    pub async fn handle_keybind(&mut self, cmd: &str) {
+    pub async fn handle_keybind(&mut self, cmd: &str) -> Result<()> {
         match cmd {
             "to_queue" => self.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Queue, self.client.clone()).await)),
             "to_playlists" => self.blocks.set_active(Blokka::Playlists),
             "search" => self.blocks.set_active(Blokka::Search),
             
-            "toggle_playback" => self.blocks.playbar.toggle(self.client.clone()).await,
-            "decrease_volume" => self.blocks.playbar.set_volume(-5, self.client.clone()).await,
-            "increase_volume" => self.blocks.playbar.set_volume(5, self.client.clone()).await,
-            "decrease_volume_big" => self.blocks.playbar.set_volume(-10, self.client.clone()).await,
-            "increase_volume_big" => self.blocks.playbar.set_volume(10, self.client.clone()).await,
-            "next_track" => self.blocks.playbar.next_track(self.client.clone()).await,
-            "previous_track" => self.blocks.playbar.previous_track(self.client.clone()).await,
-            "seek_forwards" => self.blocks.playbar.seek_forwards(10, self.client.clone()).await,
-            "seek_backwards" => self.blocks.playbar.seek_backwards(10, self.client.clone()).await,
-            "shuffle" => self.blocks.playbar.toggle_shuffle(self.client.clone()).await,
-            "repeat" => self.blocks.playbar.toggle_repeat(self.client.clone()).await,
+            "toggle_playback" => self.client.toggle_playback().await?,
+            "decrease_volume" => self.client.set_volume(-5).await?,
+            "increase_volume" => self.client.set_volume(5).await?,
+            "decrease_volume_big" => self.client.set_volume(-10).await?,
+            "increase_volume_big" => self.client.set_volume(10).await?,
+            "next_track" => self.client.next_track().await?,
+            "previous_track" => self.client.previous_track().await?,
+            "seek_forwards" => self.client.seek_forwards(10).await?,
+            "seek_backwards" => self.client.seek_backwards(10).await?,
+            "shuffle" => self.client.toggle_shuffle().await?,
+            "repeat" => self.client.toggle_repeat().await?,
 
 
             // "jump_to_start" => self.blocks.playbar.jump_to_start(self.client.clone()).await,
 
             _ => {},
-        } 
+        }
+
+        Ok(()) 
     }
 
     // new blocks are only made here !!
@@ -292,4 +294,82 @@ impl Default for KeyBindings {
 
         Self(map)
     }
+}
+
+use async_trait::async_trait;
+use anyhow::Result;
+use mpd_client::{ CommandError, commands, commands::responses::{ PlayState  }};
+use std::time::Duration;
+
+#[async_trait]
+pub trait Fnx {
+    async fn toggle_playback(&self) -> Result<(), CommandError>;
+    async fn set_volume(&self, o: i8) -> Result<(), CommandError>;
+    async fn next_track(&self) -> Result<(), CommandError>;
+    async fn previous_track(&self) -> Result<(), CommandError>;
+    async fn seek_forwards(&self, o: u64) -> Result<(), CommandError>;
+    async fn seek_backwards(&self, o: u64) -> Result<(), CommandError>;
+    async fn toggle_shuffle(&self) -> Result<(), CommandError>;
+    async fn toggle_repeat(&self) -> Result<(), CommandError>;
+}
+
+#[async_trait]
+impl Fnx for Client {
+    async fn toggle_playback(&self) -> Result<(), CommandError> {
+        let status = self.command(commands::Status).await?;
+        match status.state {
+            PlayState::Stopped => self.command(commands::SetPause(true)).await,
+            PlayState::Playing => self.command(commands::SetPause(true)).await,
+            PlayState::Paused => self.command(commands::Play::current()).await,
+        }
+    }
+
+    async fn set_volume(&self, o: i8) -> Result<(), CommandError> {
+        let current_volume = self.command(commands::Status).await?.volume;
+        let new_volume = (current_volume as i8)+o;
+        
+        let vol = if new_volume < 0 {
+            0
+        } else if new_volume > 100 {
+            100
+        } else {
+            new_volume
+        };
+
+        self.command(commands::SetVolume(vol.try_into().unwrap())).await
+    }
+
+    async fn next_track(&self) -> Result<(), CommandError> {
+        self.command(commands::Next).await
+    }
+
+    async fn previous_track(&self) -> Result<(), CommandError> {
+        self.command(commands::Previous).await
+    }
+
+    async fn seek_forwards(&self, o: u64) -> Result<(), CommandError> {
+        self.command(commands::Seek(commands::SeekMode::Forward(Duration::from_secs(o)))).await
+    }
+
+    async fn seek_backwards(&self, o: u64) -> Result<(), CommandError> {
+        self.command(commands::Seek(commands::SeekMode::Backward(Duration::from_secs(o)))).await
+    }
+
+    async fn toggle_shuffle(&self) -> Result<(), CommandError> {
+        let current_shuffle = self.command(commands::Status).await?.random;
+        self.command(commands::SetRandom(!current_shuffle)).await
+    }
+
+    async fn toggle_repeat(&self) -> Result<(), CommandError> {
+        let current_repeat = self.command(commands::Status).await?.repeat;
+        self.command(commands::SetRepeat(!current_repeat)).await
+    }
+
+    // async fn jump_to_start(&self, client: Client) {
+    //     if let Some(current_song) = &self.song {
+    //         let current_id = current_song.id;
+    //         let pos = commands::SongPosition(0);
+    //         client.command(commands::Move::id(current_id).to_position(pos)).await.unwrap();
+    //     }
+    // }
 }
