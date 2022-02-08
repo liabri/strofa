@@ -1,9 +1,10 @@
 use super::{ Blokka, State, Render, Index, get_color, selectable_list };
 use mpd_client::{ Client, commands, commands::responses::Playlist };
+use anyhow::Result;
 use tui::{ 
     Frame,
     backend::Backend, 
-    layout::{ Rect }, 
+    layout::Rect, 
     text::Span, 
     widgets::ListItem
 };
@@ -14,11 +15,11 @@ pub struct Playlists {
 }
 
 impl Playlists {
-    pub async fn new() -> Self {
-        Self {
-            entries: Vec::new(),
+    pub async fn new(client: Client) -> Result<Self> {
+        Ok(Self {
+            entries: client.command(commands::GetPlaylists).await?,
             index: Index::new(50),
-        }        
+        })      
     }
 }
 

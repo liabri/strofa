@@ -44,8 +44,6 @@ impl<B: Backend> Render<B> for Playbar {
             }        
         } 
 
-
-
         let playbar = Block::default()
             .title(Span::styled("poop", Style::default().fg(state.theme.text)))
             .borders(Borders::NONE);

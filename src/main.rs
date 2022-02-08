@@ -56,7 +56,7 @@ async fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    let mut state = State::new(client.clone()).await;
+    let mut state = State::new(client.clone()).await?;
     let events = event::Events::new();
     futures_util::pin_mut!(events);
 
