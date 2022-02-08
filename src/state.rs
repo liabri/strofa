@@ -36,6 +36,12 @@ impl State {
             "increase_volume" => self.blocks.playbar.set_volume(5, self.client.clone()).await,
             "decrease_volume_big" => self.blocks.playbar.set_volume(-10, self.client.clone()).await,
             "increase_volume_big" => self.blocks.playbar.set_volume(10, self.client.clone()).await,
+            "next_track" => self.blocks.playbar.next_track(self.client.clone()).await,
+            "previous_track" => self.blocks.playbar.previous_track(self.client.clone()).await,
+            "seek_forwards" => self.blocks.playbar.seek_forwards(10, self.client.clone()).await,
+            "seek_backwards" => self.blocks.playbar.seek_backwards(10, self.client.clone()).await,
+            "shuffle" => self.blocks.playbar.toggle_shuffle(self.client.clone()).await,
+            "repeat" => self.blocks.playbar.toggle_repeat(self.client.clone()).await,
 
 
             // "jump_to_start" => self.blocks.playbar.jump_to_start(self.client.clone()).await,
