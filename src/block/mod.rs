@@ -52,45 +52,64 @@ use tui::{
 //     async fn hovered_event(&self, key: Key) {
 // }
 
+
+
+/* 
+
+
+
+trying funky stuff down here 
+
+
+
 // maybe move blocks into chunks rather than state directly.
-// use std::marker::PhantomData;
+use std::marker::PhantomData;
+use std::collections::VecDeque;
 
-// pub struct BlokkaS<T> {
-//     _name: PhantomData<T>,
-// }
+pub struct Blocks {    
+    pub search: BlokkaK<Search>,
+    pub sort: BlokkaK<Sort>,
+    pub library: BlokkaK<Library>,
+    pub playlists: BlokkaK<Playlists>,
+    pub playbar: BlokkaK<Playbar>,
+    pub main_block: IndexedBlokka<Box<dyn Main>>,
+    // pub popup_block: Option<BlokkaK<dyn Popup>>, 
+    pub active: Option<&BlokkaK<T>>,
+    pub hovered: &BlokkaK<U>,
+    // hover_history: VecDeque<BlokkaK>,
+}
 
-// BlokkaS<MainBlokka>
+pub struct BlokkaK<T> {
+    inner: T
+}
 
-// pub enum BlokkaKind {
-//     Standard,
-//     Popup,
-// }
-
-// pub struct Blocks {    
-//     pub search: Blokka<Search>,
-//     pub sort: Blokka<Sort>,
-//     pub library: Blokka<Library>,
-//     pub playlists: Blokka<Playlists>,
-//     pub playbar: Blokka<Playbar>,
-//     pub main_block: MainBlokka,
-//     pub popup_block: Option<PopupBlokka<T>>, 
-//     pub active: Option<Blokka<T>>,
-//     pub hovered: Blokka,
-//     hover_history: VecDeque<Blokka>,
-// }
-
-// pub struct MainBlokka<T> {
-//     index: Index,
-//     _name: PhantomData<T>,
-// }
-
-// //help & error
-// pub struct PopupBlokka<T> {
-//     rect: Rect, //base layout
-//     _name: PhantomData<T>,
-// }
+impl<T> BlokkaK<T> {
+    pub fn new(inner: T) -> Self {
+        Self {
+            inner
+        }
+    }
+}
 
 
+
+pub struct IndexedBlokka<T> {
+    index: Index,
+    inner: T
+}
+
+impl<T> IndexedBlokka<T> {
+    pub fn new(inner: T, max: usize) -> Self {
+        Self {
+            index: Index::new(max),
+            inner
+        }
+    }
+}
+
+
+
+*/
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum Blokka {

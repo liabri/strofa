@@ -4,8 +4,8 @@ use tui::backend::Backend;
 use tui::Frame;
 use crate::state::State;
 use crate::Render;
-use anyhow::Result;
 use crate::Element;
+use anyhow::Result;
 
 pub struct Top;
 pub struct Left;
