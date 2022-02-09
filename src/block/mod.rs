@@ -31,9 +31,11 @@ pub use queue::Queue;
 
 pub use crate::state::State;
 pub use crate::theme::get_color;
+pub use crate::StrofaBackend;
 
 pub use mpd_client::commands::responses::{ Song, SongInQueue, Playlist, PlayState };
 pub use mpd_client::{ Client, commands };
+use anyhow::Result;
 
 pub use tui::{
     backend::Backend,
@@ -71,48 +73,123 @@ pub enum Popup {
 	Error
 }
 
-pub fn top<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
-        .split(layout_chunk);
+use std::marker::PhantomData;
+use tui::backend::CrosstermBackend;
+use std::io::Stdout;
 
-    state.blocks.search.render(f, state, chunks[0]);
-    state.blocks.sort.render(f, state, chunks[1]);
+pub type Element = Box<dyn Render<StrofaBackend>>;
+
+pub struct Chunks {
+	pub top: Chunk<Top>,
+	pub centre: Chunk<Centre>,
+	pub bottom: Chunk<Bottom>,
 }
 
-pub fn centre<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
-        .split(layout_chunk);
+impl Chunks {
+	pub async fn new() -> Result<Self> {
+		let mut centre_elements = Vec::new();
+		centre_elements.push(Box::new(Chunk::<Left>::new(Vec::new())?) as Element);
 
-    left(f, state, chunks[0]);
-    state.blocks.main.render(f, state, chunks[1]);
+		Ok(Self{
+			top: Chunk::<Top>::new(Vec::new())?,
+			centre: Chunk::<Centre>::new(centre_elements)?,
+			bottom: Chunk::<Bottom>::new(Vec::new())?,
+		})
+	}
 }
 
-pub fn left<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage(30), 
-            Constraint::Percentage(70)
-        ].as_ref())
-        .split(layout_chunk);
-
-
-    state.blocks.library.render(f, state, chunks[0]);
-    state.blocks.playlists.render(f, state, chunks[1]);
+pub struct Chunk<T> {
+    children: Vec<Element>,
+    show: bool,
+    _kind: PhantomData<T>,
 }
 
-pub fn bottom<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(100)].as_ref())
-        .split(layout_chunk);
+impl<T> Chunk<T> {
+	fn new(children: Vec<Element>) -> Result<Self> {
+		Ok(Self {
+			children,
+			show: true,
+			_kind: PhantomData,
+		})
+	}
 
-    state.blocks.playbar.render(f, state, chunks[0]);
+	// fn render_children<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
+	// 	for child in self.children {
+	// 		child.render(&mut (&mut f as Frame<StrofaBackend>), state, layout_chunk);
+	// 	}
+	// }
 }
+
+pub struct Top;
+pub struct Left;
+pub struct Centre;
+pub struct Bottom;
+
+impl<B: Backend> Render<B> for Chunk<Top> {
+	fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+		if self.show {
+		    let chunks = Layout::default()
+		        .direction(Direction::Horizontal)
+		        .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
+		        .split(layout_chunk);
+
+		    state.blocks.search.render(f, state, chunks[0]);
+		    state.blocks.sort.render(f, state, chunks[1]);
+		}
+	}
+}
+
+impl<B: Backend> Render<B> for Chunk<Left> {
+	fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+		if self.show {
+		    let chunks = Layout::default()
+		        .direction(Direction::Vertical)
+		        .constraints([
+		            Constraint::Percentage(30), 
+		            Constraint::Percentage(70)
+		        ].as_ref())
+		        .split(layout_chunk);
+
+
+		    state.blocks.library.render(f, state, chunks[0]);
+		    state.blocks.playlists.render(f, state, chunks[1]);
+		}
+	}
+}
+
+impl<B: Backend> Render<B> for Chunk<Centre> {
+	fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+		if self.show {
+		    let chunks = Layout::default()
+		        .direction(Direction::Horizontal)
+		        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
+		        .split(layout_chunk);
+
+		    // self.render_children(f, state, chunks[0]);
+		    state.blocks.main.render(f, state, chunks[1]);
+		}
+	}
+}
+
+impl<B: Backend> Render<B> for Chunk<Bottom> {
+	fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+		if self.show {
+		    let chunks = Layout::default()
+		        .direction(Direction::Horizontal)
+		        .constraints([Constraint::Percentage(100)].as_ref())
+		        .split(layout_chunk);
+
+		    state.blocks.playbar.render(f, state, chunks[0]);
+		}
+	}
+}
+
+
+
+
+
+
+
 
 pub struct Index {
     pub inner: usize,

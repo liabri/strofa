@@ -1,4 +1,4 @@
-use crate::block::{ Blokka, MainBlock, Library, Podcasts, Artists, Queue, Albums, SearchResults, Main, Playlists, Search, Sort, Playbar, Tracks, TrackKind, AlbumKind };
+use crate::block::{ Blokka, Chunks, MainBlock, Library, Podcasts, Artists, Queue, Albums, SearchResults, Main, Playlists, Search, Sort, Playbar, Tracks, TrackKind, AlbumKind };
 use crate::event::Key;
 use crate::theme::Theme;
 use crate::client::StrofaClient;
@@ -9,7 +9,7 @@ use tui::layout::Rect;
 use mpd_client::Client;
 
 pub struct State {
-    // pub chunks: Chunks,
+    pub chunks: Chunks,
     pub blocks: Blocks,
     pub size: Rect,
     pub theme: Theme,
@@ -17,33 +17,10 @@ pub struct State {
     pub client: Client
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 impl State {
     pub async fn new(client: Client) -> Result<Self> {
         Ok(Self {
+            chunks: Chunks::new().await?,
             blocks: Blocks::new(client.clone()).await?,
             size: Rect::default(),
             theme: Theme::default(),
