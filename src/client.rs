@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use anyhow::Result;
-use mpd_client::{ Client, CommandError, commands, commands::responses::{ PlayState  }};
+use mpd_client::{ Client, CommandError, commands, commands::responses::{ Song, PlayState }, filter::{ Operator, Filter }, tag::Tag };
+
 use std::time::Duration;
 
 #[async_trait]
@@ -13,6 +14,7 @@ pub trait StrofaClient {
     async fn seek_backwards(&self, o: u64) -> Result<(), CommandError>;
     async fn toggle_shuffle(&self) -> Result<(), CommandError>;
     async fn toggle_repeat(&self) -> Result<(), CommandError>;
+    async fn search(&self, query: &str) -> Result<Vec<Song>, CommandError>;
 }
 
 #[async_trait]
@@ -74,4 +76,9 @@ impl StrofaClient for Client {
     //         client.command(commands::Move::id(current_id).to_position(pos)).await.unwrap();
     //     }
     // }
+
+    async fn search(&self, query: &str) -> Result<Vec<Song>, CommandError> {
+        let filter = Filter::new(Tag::Name, Operator::Contain, query.to_string());
+        self.command(commands::Find::new(filter)).await
+    }
 }

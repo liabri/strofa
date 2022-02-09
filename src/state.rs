@@ -66,7 +66,7 @@ impl<B: 'static + Backend> State<B> {
                 match key {
                     Key::Enter => { 
                         let query = self.blocks.search.query.clone();
-                        self.blocks.main = MainBlock::SearchResults(SearchResults::new(query).await);
+                        self.blocks.main = MainBlock::SearchResults(SearchResults::new(self.client.clone(), query).await.unwrap());
                         self.blocks.set_active(Blokka::Main);
                         self.blocks.hovered = Blokka::Main;
                     },

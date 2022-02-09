@@ -1,7 +1,9 @@
+use anyhow::Result;
 use crate::{ Render, State };
 use super::{ Blokka, TableHeaderItem, SelectableList, Index };
-use super::{ get_color, get_percentage_width, selectable_list, selectable_table };
-use mpd_client::{ Client, commands::{ self, responses::SongInQueue } };
+use super::{ get_color, get_percentage_width, selectable_table };
+use mpd_client::{ Client, commands::{ self, responses::Song } };
+use crate::client::StrofaClient;
 use tui::{ 
     Frame, backend::Backend, layout::Rect, style::Style, text::{ Span, Text }, 
     widgets::{ Block, Borders, BorderType, ListItem, Paragraph } 
@@ -37,7 +39,7 @@ impl<B: Backend> Render<B> for Search {
 
 pub struct SearchResults {
     pub index: Index,
-    pub query: String,
+    pub songs: Vec<Song>
 }
 
 impl SelectableList for SearchResults {
@@ -47,11 +49,11 @@ impl SelectableList for SearchResults {
 }
 
 impl SearchResults {
-    pub async fn new(query: String) -> Self {
-        Self {
-            query,
+    pub async fn new(client: Client, query: String) -> Result<Self> {
+        Ok(Self {
             index: Index::new(50),
-        }
+            songs: client.search(&query).await?
+        })
     }
 }
 
@@ -62,16 +64,39 @@ impl<B: Backend> Render<B> for SearchResults {
             state.blocks.is_hovered(Blokka::Main)
         );
 
-        let items: Vec<ListItem> = Vec::new(); 
+        let items = self.songs
+            .iter()
+            .map(|song| { 
+                let artists = song.artists();
+                let artist = if artists.len() > 0 {
+                    artists[0].to_string()
+                } else {
+                    String::new()
+                };
 
-        selectable_list(
+                vec![
+                    song.title().unwrap_or("none").to_string(), 
+                    artist,
+                    song.duration.unwrap_or(std::time::Duration::from_secs(1)).as_secs().to_string()
+                ]
+            }).collect::<Vec<Vec<String>>>();
+
+        let header =  vec![
+            TableHeaderItem { text: "Title", width: get_percentage_width(layout_chunk.width, 2.0 / 5.0) - 5 },
+            TableHeaderItem { text: "Artist", width: get_percentage_width(layout_chunk.width, 2.0 / 5.0) },
+            // TableHeaderItem { text: "Album", width: get_percentage_width(layout_chunk.width, 2.0 / 5.0) },
+            TableHeaderItem { text: "Length", width: get_percentage_width(layout_chunk.width, 1.0 / 5.0) },
+        ];
+
+        selectable_table(
             f,
             state,
             layout_chunk,
             " Search Results ",
+            &header,
             items,
+            self.index.inner,
             highlight_state,
-            Some(self.index.inner)
-        );
+        )
     }
 }
