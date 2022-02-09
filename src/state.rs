@@ -125,13 +125,25 @@ impl<B: 'static + Backend> State<B> {
                 match key {
                     Key::Up => self.blocks.main.index().dec(),
                     Key::Down => self.blocks.main.index().inc(),
-                    Key::Enter => {
-                        match &self.blocks.main {
-                            MainBlock::Tracks(x) => x.play(self.client.clone(), x.index.inner).await,
-                            MainBlock::Queue(x) => x.play(self.client.clone(), x.index.inner).await,
-                            _ => {} //todo
+                    _ => {}
+                }
+
+                match &self.blocks.main {
+                    MainBlock::Tracks(x) => {
+                        match key {
+                            Key::Enter => x.play(self.client.clone(), x.index.inner).await,
+                            _ => {}
                         }
-                    }
+                    },
+
+                    MainBlock::Queue(x) => {
+                        match key {
+                            Key::Enter => x.play(self.client.clone(), x.index.inner).await,
+                            Key::Char('c') => self.client.clear_queue().await.unwrap(),
+                            _ => {}
+                        }
+                    },
+
                     _ => {}
                 }
             },

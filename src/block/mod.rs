@@ -53,6 +53,45 @@ use tui::{
 // }
 
 // maybe move blocks into chunks rather than state directly.
+// use std::marker::PhantomData;
+
+// pub struct BlokkaS<T> {
+//     _name: PhantomData<T>,
+// }
+
+// BlokkaS<MainBlokka>
+
+// pub enum BlokkaKind {
+//     Standard,
+//     Popup,
+// }
+
+// pub struct Blocks {    
+//     pub search: Blokka<Search>,
+//     pub sort: Blokka<Sort>,
+//     pub library: Blokka<Library>,
+//     pub playlists: Blokka<Playlists>,
+//     pub playbar: Blokka<Playbar>,
+//     pub main_block: MainBlokka,
+//     pub popup_block: Option<PopupBlokka<T>>, 
+//     pub active: Option<Blokka<T>>,
+//     pub hovered: Blokka,
+//     hover_history: VecDeque<Blokka>,
+// }
+
+// pub struct MainBlokka<T> {
+//     index: Index,
+//     _name: PhantomData<T>,
+// }
+
+// //help & error
+// pub struct PopupBlokka<T> {
+//     rect: Rect, //base layout
+//     _name: PhantomData<T>,
+// }
+
+
+
 #[derive(Copy, Clone, PartialEq)]
 pub enum Blokka {
     Search,
@@ -60,14 +99,7 @@ pub enum Blokka {
     Library,
     Playlists,
     Playbar,
-    // Standard,
-    // Popup,
     Main
-}
-
-pub enum Popup {
-    Help,
-    Error
 }
 
 pub trait SelectableList {
