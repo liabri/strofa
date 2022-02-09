@@ -61,6 +61,9 @@ impl<B: 'static + Backend> State<B> {
 
     // new blocks are only made here !!
     pub async fn active_event(&mut self, key: Key) {
+
+        // self.blocks.active.active_key_event();
+
         match self.blocks.active {
             Some(Blokka::Search) => {
                 match key {
