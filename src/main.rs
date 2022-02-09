@@ -5,8 +5,9 @@ mod state;
 use state::State;
 
 mod block;
-use block::{ Blokka, Playbar, Render };
+use block::{ Blokka, Playbar };
 
+mod chunk;
 mod event;
 mod theme;
 mod client;
@@ -15,8 +16,8 @@ use anyhow::Result;
 
 use tui::{
     backend::{ Backend, CrosstermBackend },
-    layout::{ Layout, Constraint, Direction },
-    Terminal
+    layout::{ Layout, Constraint, Direction, Rect },
+    Terminal, Frame
 };
 
 use crossterm::{
@@ -36,7 +37,10 @@ use std::io::{ Stdout, stdout };
 pub const SMALL_TERMINAL_WIDTH: u16 = 150;
 pub const SMALL_TERMINAL_HEIGHT: u16 = 45;
 
-// pub type StrofaBackend = CrosstermBackend<Stdout>;
+pub type Element<B> = Box<dyn Render<B>>;
+pub trait Render<B: Backend> {
+    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect);
+}
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {

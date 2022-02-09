@@ -29,8 +29,9 @@ pub use tracks::{ Tracks, TrackKind };
 mod queue;
 pub use queue::Queue;
 
-pub use crate::state::State;
-pub use crate::theme::get_color;
+use crate::{ Element, Render }; 
+use crate::state::State;
+use crate::theme::get_color;
 
 pub use mpd_client::commands::responses::{ Song, SongInQueue, Playlist, PlayState };
 pub use mpd_client::{ Client, commands };
@@ -45,13 +46,9 @@ pub use tui::{
     Frame,
 };
 
-pub trait Render<B: Backend> {
-    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect);
-}
-
 //eventually move key events from state to each individual block.
 // pub trait KeyEvent {
-// 	async fn active_event(&self, key: Key);
+//     async fn active_event(&self, key: Key);
 //     async fn hovered_event(&self, key: Key) {
 // }
 
@@ -68,126 +65,9 @@ pub enum Blokka {
 }
 
 pub enum Popup {
-	Help,
-	Error
+    Help,
+    Error
 }
-
-use std::marker::PhantomData;
-use tui::backend::CrosstermBackend;
-use std::io::Stdout;
-
-//instead of putting render here use another trait like "Element" since Render has a generic.
-pub type Element<B> = Box<dyn Render<B>>;
-
-pub struct Chunks<B> {
-	pub top: Chunk<B, Top>,
-	pub centre: Chunk<B, Centre>,
-	pub bottom: Chunk<B, Bottom>,
-}
-
-impl<B: 'static + Backend> Chunks<B> {
-	pub async fn new() -> Result<Self> {
-		let mut centre_elements = Vec::new();
-		centre_elements.push(Box::new(Chunk::<B, Left>::new(Vec::new())?) as Element<B>);
-
-		Ok(Self{
-			top: Chunk::<B, Top>::new(Vec::new())?,
-			centre: Chunk::<B, Centre>::new(centre_elements)?,
-			bottom: Chunk::<B, Bottom>::new(Vec::new())?,
-		})
-	}
-}
-
-pub struct Chunk<B, T> {
-    children: Vec<Element<B>>,
-    show: bool,
-    _kind: PhantomData<T>,
-}
-
-impl<B: Backend, T> Chunk<B, T> {
-	fn new(children: Vec<Element<B>>) -> Result<Self> {
-		Ok(Self {
-			children,
-			show: true,
-			_kind: PhantomData,
-		})
-	}
-
-	fn render_children(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
-		for child in &self.children {
-			child.render(f, state, layout_chunk);
-		}
-	}
-}
-
-pub struct Top;
-pub struct Left;
-pub struct Centre;
-pub struct Bottom;
-
-impl<B: Backend> Render<B> for Chunk<B, Top> {
-	fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
-		if self.show {
-		    let chunks = Layout::default()
-		        .direction(Direction::Horizontal)
-		        .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
-		        .split(layout_chunk);
-
-		    state.blocks.search.render(f, state, chunks[0]);
-		    state.blocks.sort.render(f, state, chunks[1]);
-		}
-	}
-}
-
-impl<B: Backend> Render<B> for Chunk<B, Left> {
-	fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
-		if self.show {
-		    let chunks = Layout::default()
-		        .direction(Direction::Vertical)
-		        .constraints([
-		            Constraint::Percentage(30), 
-		            Constraint::Percentage(70)
-		        ].as_ref())
-		        .split(layout_chunk);
-
-
-		    state.blocks.library.render(f, state, chunks[0]);
-		    state.blocks.playlists.render(f, state, chunks[1]);
-		}
-	}
-}
-
-impl<B: Backend> Render<B> for Chunk<B, Centre> {
-	fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
-		if self.show {
-		    let chunks = Layout::default()
-		        .direction(Direction::Horizontal)
-		        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
-		        .split(layout_chunk);
-
-		    self.render_children(f, state, chunks[0]);
-		    state.blocks.main.render(f, state, chunks[1]);
-		}
-	}
-}
-
-impl<B: Backend> Render<B> for Chunk<B, Bottom> {
-	fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
-		if self.show {
-		    let chunks = Layout::default()
-		        .direction(Direction::Horizontal)
-		        .constraints([Constraint::Percentage(100)].as_ref())
-		        .split(layout_chunk);
-
-		    state.blocks.playbar.render(f, state, chunks[0]);
-		}
-	}
-}
-
-
-
-
-
 
 
 
@@ -276,9 +156,9 @@ where B: Backend {
 }
 
 pub fn get_percentage_width(width: u16, percentage: f32) -> u16 {
- 	let padding = 3;
- 	let width = width - padding;
- 	(f32::from(width) * percentage) as u16
+     let padding = 3;
+     let width = width - padding;
+     (f32::from(width) * percentage) as u16
 }
 
 pub trait Main {

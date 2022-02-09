@@ -1,4 +1,5 @@
-use crate::block::{ Blokka, Chunks, MainBlock, Library, Podcasts, Artists, Queue, Albums, SearchResults, Main, Playlists, Search, Sort, Playbar, Tracks, TrackKind, AlbumKind };
+use crate::block::{ Blokka, MainBlock, Library, Podcasts, Artists, Queue, Albums, SearchResults, Main, Playlists, Search, Sort, Playbar, Tracks, TrackKind, AlbumKind };
+use crate::chunk::Chunks;
 use crate::event::Key;
 use crate::theme::Theme;
 use crate::client::StrofaClient;
