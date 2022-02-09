@@ -119,7 +119,7 @@ async fn main() -> Result<()> {
                 },
 
                 _ if let Some(cmd) = state.keys.0.clone().get(&key) => {
-                    state.handle_keybind(&cmd.clone()).await?;
+                    state.global_keybinds(&cmd.clone()).await?;
                 },
 
                 _ => {
@@ -136,7 +136,7 @@ async fn main() -> Result<()> {
         match futures::poll!(state_changes.next()) {
             futures::task::Poll::Ready(x) => {
                 match x.transpose()? {
-                    Some(Subsystem::Player) => state.blocks.playbar=Playbar::new(client.clone()).await, 
+                    Some(Subsystem::Player) => state.blocks.playbar=Playbar::new(&client).await, 
                     Some(Subsystem::Queue) => {println!("queue")},
                     Some(Subsystem::StoredPlaylist) => {},
                     Some(Subsystem::Update) => {}

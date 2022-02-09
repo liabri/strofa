@@ -31,10 +31,10 @@ impl<B: 'static + Backend> State<B> {
         })
     }
 
-    pub async fn handle_keybind(&mut self, cmd: &str) -> Result<()> {
+    pub async fn global_keybinds(&mut self, cmd: &str) -> Result<()> {
         match cmd {
             // binds manipulating ui
-            "to_queue" => self.blocks.set_main(MainBlock::Queue(Queue::new(self.client.clone()).await?)),
+            "to_queue" => self.blocks.set_main(MainBlock::Queue(Queue::new(&self.client).await?)),
             // "toggle_top" => self.blocks
             "to_playlists" => self.blocks.set_active(Blokka::Playlists),
             "search" => self.blocks.set_active(Blokka::Search),
@@ -93,8 +93,8 @@ impl<B: 'static + Backend> State<B> {
                     Key::Enter => {
                         let index = self.blocks.library.index.inner;
                         let main_block = match self.blocks.library.entries[index] {
-                            "Queue" => MainBlock::Queue(Queue::new(self.client.clone()).await.unwrap()),
-                            "Tracks" => MainBlock::Tracks(Tracks::new(TrackKind::All, self.client.clone()).await.unwrap()),
+                            "Queue" => MainBlock::Queue(Queue::new(&self.client).await.unwrap()),
+                            "Tracks" => MainBlock::Tracks(Tracks::new(TrackKind::All, &self.client).await.unwrap()),
                             "Albums" => MainBlock::Albums(Albums::new(AlbumKind::All).await),
                             "Artists" => MainBlock::Artists(Artists::new().await),
                             "Podcasts" => MainBlock::Podcasts(Podcasts::new().await),
@@ -114,7 +114,7 @@ impl<B: 'static + Backend> State<B> {
                     Key::Enter => {
                         let index = self.blocks.playlists.index.inner;  
                         let name = self.blocks.playlists.entries.get(0).unwrap().name.to_string();
-                        self.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Playlist(name), self.client.clone()).await.unwrap()));
+                        self.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Playlist(name), &self.client).await.unwrap()));
                     },
 
                     _ => {}
@@ -131,17 +131,24 @@ impl<B: 'static + Backend> State<B> {
                 match &self.blocks.main {
                     MainBlock::Tracks(x) => {
                         match key {
-                            Key::Enter => x.play(self.client.clone(), x.index.inner).await,
+                            Key::Enter => x.play(&self.client, x.index.inner).await,
+                            // Key::Char('A') => self.client.add_song_to_playlist(x.songs.get(x.index.inner).unwrap()).await
                             _ => {}
                         }
                     },
 
                     MainBlock::Queue(x) => {
-                        match key {
-                            Key::Enter => x.play(self.client.clone(), x.index.inner).await,
-                            Key::Char('c') => self.client.clear_queue().await.unwrap(),
-                            _ => {}
-                        }
+                        // x.active_key_event(self, key);
+                        // match key {
+                        //     Key::Enter => x.play(self.client.clone(), x.index.inner).await,
+                        //     Key::Char('c') => self.client.clear_queue().await.unwrap(),
+                        //     // Key::Char('p') => self.client.proritise_song_in_queue(x.index.inner)
+                        //     // Key::Char('w') => self.client.move_song_up_in_queue(x.songs.get(x.index.inner).unwrap()).await
+                        //     // Key::Char('s') => self.client.move_song_down_in_queue(x.songs.get(x.index.inner).unwrap()).await
+                        //     // Key::Char('A') => self.client.add_song_to_playlist(x.songs.get(x.index.inner).unwrap()).await
+                        //     // Key::Char('o') => x.jump_to_current_song().await
+                        //     _ => {}
+                        // }
                     },
 
                     _ => {}
@@ -250,9 +257,9 @@ impl Blocks {
             search: Search::default(),
             sort: Sort::new().await,
             library: Library::new().await,
-            playlists: Playlists::new(client.clone()).await?,
-            playbar: Playbar::new(client.clone()).await,
-            main: MainBlock::Queue(Queue::new(client).await?),
+            playlists: Playlists::new(&client).await?,
+            playbar: Playbar::new(&client).await,
+            main: MainBlock::Queue(Queue::new(&client).await?),
             active: None,
             hovered: Blokka::Library,
             hover_history: VecDeque::new() 
@@ -287,6 +294,9 @@ impl Blocks {
     }  
 }
 
+
+//maybe some gentlemens rule where Ctrl(X) = in the current active window, Char(X) = in the whole app
+//or the other way 'round
 pub struct KeyBindings(pub HashMap<Key, String>);
 impl Default for KeyBindings {
     fn default() -> Self {

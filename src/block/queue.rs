@@ -9,7 +9,7 @@ pub struct Queue {
 }
 
 impl Queue {
-    pub async fn new(client: Client) -> Result<Self> {
+    pub async fn new(client: &Client) -> Result<Self> {
         let songs = client.command(commands::Queue).await?;
 
         Ok(Self {
@@ -18,7 +18,7 @@ impl Queue {
         })
     }
 
-    pub async fn play(&self, client: Client, index: usize) {
+    pub async fn play(&self, client: &Client, index: usize) {
         let song = self.songs.get(index).unwrap().id;
         client.command(commands::Play::song(song)).await.unwrap();
     }
@@ -76,5 +76,22 @@ impl<B: Backend> Render<B> for Queue {
 impl SelectableList for Queue {
     fn index(&mut self) -> &mut Index {
         &mut self.index
+    }
+}
+
+use crate::client::StrofaClient;
+use crate::event::Key;
+impl Queue {
+    pub async fn active_key_event<B>(&self, state: &mut State<B>, key: Key) where B: Backend {
+        match key {
+            Key::Enter => self.play(&state.client, self.index.inner).await,
+            Key::Char('c') => state.client.clear_queue().await.unwrap(),
+            // Key::Char('p') => self.client.proritise_song_in_queue(x.index.inner)
+            // Key::Char('w') => self.client.move_song_up_in_queue(x.songs.get(x.index.inner).unwrap()).await
+            // Key::Char('s') => self.client.move_song_down_in_queue(x.songs.get(x.index.inner).unwrap()).await
+            // Key::Char('A') => self.client.add_song_to_playlist(x.songs.get(x.index.inner).unwrap()).await
+            // Key::Char('o') => x.jump_to_current_song().await
+            _ => {}
+        }
     }
 }

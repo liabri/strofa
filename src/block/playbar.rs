@@ -19,7 +19,7 @@ pub struct Playbar {
 }
 
 impl Playbar {
-    pub async fn new(client: Client) -> Self {
+    pub async fn new(client: &Client) -> Self {
         let status = client.command(commands::Status).await.unwrap();
 
         Self { 

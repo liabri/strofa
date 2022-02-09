@@ -15,7 +15,7 @@ pub struct Playlists {
 }
 
 impl Playlists {
-    pub async fn new(client: Client) -> Result<Self> {
+    pub async fn new(client: &Client) -> Result<Self> {
         Ok(Self {
             entries: client.command(commands::GetPlaylists).await?,
             index: Index::new(50),
