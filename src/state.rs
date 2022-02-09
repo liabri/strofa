@@ -61,12 +61,11 @@ impl<B: 'static + Backend> State<B> {
 
     // new blocks are only made here !!
     pub async fn active_event(&mut self, key: Key) {
-
-        // self.blocks.active.active_key_event();
+        // ideal: self.blocks.active.active_key_event();
 
         match self.blocks.active {
             Some(Blokka::Search) => Search::active_key_event(self, key).await,
-            Some(Blokka::Sort) => {},
+            Some(Blokka::Sort) => Sort::active_key_event(self, key).await,
             Some(Blokka::Library) => Library::active_key_event(self, key).await,
             Some(Blokka::Playlists) => Playlists::active_key_event(self, key).await,
 
@@ -108,50 +107,12 @@ impl<B: 'static + Backend> State<B> {
         }
     }
 
-    pub fn hovered_event(&mut self, key: Key) {
+    pub async fn hovered_event(&mut self, key: Key) {
         match self.blocks.hovered {
-            Blokka::Search => {
-                match key {
-                    Key::Down => {
-                        for previous in self.blocks.hover_history.clone().into_iter() {
-                            if previous == Blokka::Library || previous == Blokka::Main {
-                                self.blocks.set_hover(&previous);
-                                return;  
-                            }
-                        }
-
-                        self.blocks.set_hover(&Blokka::Library)
-                    },
-
-                    Key::Right => self.blocks.set_hover(&Blokka::Sort),
-                    _ => {},
-                }
-            },
-
-            Blokka::Sort => {
-                match key {
-                    Key::Left => self.blocks.set_hover(&Blokka::Search),
-                    Key::Down => self.blocks.set_hover(&Blokka::Main),
-                    _ => {},
-                }
-            },
-
-            Blokka::Library => {
-                match key {
-                    Key::Up => self.blocks.set_hover(&Blokka::Search),
-                    Key::Down => self.blocks.set_hover(&Blokka::Playlists),
-                    Key::Right => self.blocks.set_hover(&Blokka::Main),
-                    _ => {},
-                }
-            },
-
-            Blokka::Playlists => {
-                match key {
-                    Key::Up => self.blocks.set_hover(&Blokka::Library),
-                    Key::Right => self.blocks.set_hover(&Blokka::Main),
-                    _ => {},
-                }
-            },
+            Blokka::Search => Search::hovered_key_event(self, key).await,
+            Blokka::Sort => Sort::hovered_key_event(self, key).await,
+            Blokka::Library => Library::hovered_key_event(self, key).await,
+            Blokka::Playlists => Playlists::hovered_key_event(self, key).await,
 
             Blokka::Main => {
                 match key {
@@ -197,7 +158,7 @@ pub struct Blocks {
     pub main: MainBlock,
     pub active: Option<Blokka>,
     pub hovered: Blokka,
-    hover_history: VecDeque<Blokka>,
+    pub hover_history: VecDeque<Blokka>,
 }
 
 impl Blocks {

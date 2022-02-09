@@ -124,7 +124,7 @@ async fn main() -> Result<()> {
 
                 _ => {
                     if let None = state.blocks.active {
-                        state.hovered_event(key);
+                        state.hovered_event(key).await;
                     } else {
                         state.active_event(key).await; 
                     }

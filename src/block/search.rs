@@ -62,6 +62,24 @@ impl Search {
             _ => {}
         }
     }
+
+    pub async fn hovered_key_event<B>(state: &mut State<B>, key: Key) where B: Backend {
+        match key {
+            Key::Down => {
+                for previous in state.blocks.hover_history.clone().into_iter() {
+                    if previous == Blokka::Library || previous == Blokka::Main {
+                        state.blocks.set_hover(&previous);
+                        return;  
+                    }
+                }
+
+                state.blocks.set_hover(&Blokka::Library)
+            },
+
+            Key::Right => state.blocks.set_hover(&Blokka::Sort),
+            _ => {},
+        }
+    }
 }
 
 
