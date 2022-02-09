@@ -48,3 +48,16 @@ impl<B: Backend> Render<B> for Sort {
         f.render_widget(sort, layout_chunk);
     }
 }
+
+use crate::event::Key;
+impl Sort {
+    pub async fn active_key_event<B>(state: &mut State<B>, key: Key) where B: Backend {}
+
+    pub async fn hovered_key_event<B>(state: &mut State<B>, key: Key) where B: Backend {
+        match key {
+            Key::Left => state.blocks.set_hover(&Blokka::Search),
+            Key::Down => state.blocks.set_hover(&Blokka::Main),
+            _ => {},
+        }
+    }
+}

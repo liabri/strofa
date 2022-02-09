@@ -75,4 +75,13 @@ impl Library {
             _ => {},
         }
     }
+
+    pub async fn hovered_key_event<B>(state: &mut State<B>, key: Key) where B: Backend {
+        match key {
+            Key::Up => state.blocks.set_hover(&Blokka::Search),
+            Key::Down => state.blocks.set_hover(&Blokka::Playlists),
+            Key::Right => state.blocks.set_hover(&Blokka::Main),
+            _ => {},
+        }
+    }
 }
