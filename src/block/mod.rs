@@ -31,7 +31,6 @@ pub use queue::Queue;
 
 pub use crate::state::State;
 pub use crate::theme::get_color;
-pub use crate::StrofaBackend;
 
 pub use mpd_client::commands::responses::{ Song, SongInQueue, Playlist, PlayState };
 pub use mpd_client::{ Client, commands };
@@ -47,7 +46,7 @@ pub use tui::{
 };
 
 pub trait Render<B: Backend> {
-    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect);
+    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect);
 }
 
 //eventually move key events from state to each individual block.
@@ -77,35 +76,36 @@ use std::marker::PhantomData;
 use tui::backend::CrosstermBackend;
 use std::io::Stdout;
 
-pub type Element = Box<dyn Render<StrofaBackend>>;
+//instead of putting render here use another trait like "Element" since Render has a generic.
+pub type Element<B> = Box<dyn Render<B>>;
 
-pub struct Chunks {
-	pub top: Chunk<Top>,
-	pub centre: Chunk<Centre>,
-	pub bottom: Chunk<Bottom>,
+pub struct Chunks<B> {
+	pub top: Chunk<B, Top>,
+	pub centre: Chunk<B, Centre>,
+	pub bottom: Chunk<B, Bottom>,
 }
 
-impl Chunks {
+impl<B: 'static + Backend> Chunks<B> {
 	pub async fn new() -> Result<Self> {
 		let mut centre_elements = Vec::new();
-		centre_elements.push(Box::new(Chunk::<Left>::new(Vec::new())?) as Element);
+		centre_elements.push(Box::new(Chunk::<B, Left>::new(Vec::new())?) as Element<B>);
 
 		Ok(Self{
-			top: Chunk::<Top>::new(Vec::new())?,
-			centre: Chunk::<Centre>::new(centre_elements)?,
-			bottom: Chunk::<Bottom>::new(Vec::new())?,
+			top: Chunk::<B, Top>::new(Vec::new())?,
+			centre: Chunk::<B, Centre>::new(centre_elements)?,
+			bottom: Chunk::<B, Bottom>::new(Vec::new())?,
 		})
 	}
 }
 
-pub struct Chunk<T> {
-    children: Vec<Element>,
+pub struct Chunk<B, T> {
+    children: Vec<Element<B>>,
     show: bool,
     _kind: PhantomData<T>,
 }
 
-impl<T> Chunk<T> {
-	fn new(children: Vec<Element>) -> Result<Self> {
+impl<B: Backend, T> Chunk<B, T> {
+	fn new(children: Vec<Element<B>>) -> Result<Self> {
 		Ok(Self {
 			children,
 			show: true,
@@ -113,11 +113,11 @@ impl<T> Chunk<T> {
 		})
 	}
 
-	// fn render_children<B>(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) where B: Backend {
-	// 	for child in self.children {
-	// 		child.render(&mut (&mut f as Frame<StrofaBackend>), state, layout_chunk);
-	// 	}
-	// }
+	fn render_children(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
+		for child in &self.children {
+			child.render(f, state, layout_chunk);
+		}
+	}
 }
 
 pub struct Top;
@@ -125,8 +125,8 @@ pub struct Left;
 pub struct Centre;
 pub struct Bottom;
 
-impl<B: Backend> Render<B> for Chunk<Top> {
-	fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+impl<B: Backend> Render<B> for Chunk<B, Top> {
+	fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
 		if self.show {
 		    let chunks = Layout::default()
 		        .direction(Direction::Horizontal)
@@ -139,8 +139,8 @@ impl<B: Backend> Render<B> for Chunk<Top> {
 	}
 }
 
-impl<B: Backend> Render<B> for Chunk<Left> {
-	fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+impl<B: Backend> Render<B> for Chunk<B, Left> {
+	fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
 		if self.show {
 		    let chunks = Layout::default()
 		        .direction(Direction::Vertical)
@@ -157,22 +157,22 @@ impl<B: Backend> Render<B> for Chunk<Left> {
 	}
 }
 
-impl<B: Backend> Render<B> for Chunk<Centre> {
-	fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+impl<B: Backend> Render<B> for Chunk<B, Centre> {
+	fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
 		if self.show {
 		    let chunks = Layout::default()
 		        .direction(Direction::Horizontal)
 		        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
 		        .split(layout_chunk);
 
-		    // self.render_children(f, state, chunks[0]);
+		    self.render_children(f, state, chunks[0]);
 		    state.blocks.main.render(f, state, chunks[1]);
 		}
 	}
 }
 
-impl<B: Backend> Render<B> for Chunk<Bottom> {
-	fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+impl<B: Backend> Render<B> for Chunk<B, Bottom> {
+	fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
 		if self.show {
 		    let chunks = Layout::default()
 		        .direction(Direction::Horizontal)
@@ -217,7 +217,7 @@ impl Index {
     }
 }
 
-fn selectable_list<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title: &str, items: Vec<ListItem>, highlight_state: (bool, bool), selected_index: Option<usize>) where B: Backend {
+fn selectable_list<B>(f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect, title: &str, items: Vec<ListItem>, highlight_state: (bool, bool), selected_index: Option<usize>) where B: Backend {
     let mut list_state = ListState::default();
     list_state.select(selected_index);
 
@@ -234,7 +234,7 @@ pub struct TableHeaderItem<'a> {
     width: u16
 }
 
-fn selectable_table<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title: &str, header: &[TableHeaderItem], items: Vec<Vec<String>>, selected_index: usize, highlight_state: (bool, bool)) 
+fn selectable_table<B>(f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect, title: &str, header: &[TableHeaderItem], items: Vec<Vec<String>>, selected_index: usize, highlight_state: (bool, bool)) 
 where B: Backend {
     let widths = header
         .iter()
@@ -295,7 +295,7 @@ pub enum MainBlock {
 }
 
 impl<B: Backend> Render<B> for MainBlock {
-    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         match self {
             MainBlock::SearchResults(x) => x.render(f, state, layout_chunk),
             MainBlock::Artists(x) => x.render(f, state, layout_chunk),

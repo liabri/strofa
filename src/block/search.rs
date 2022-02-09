@@ -17,7 +17,7 @@ pub struct Search {
 }
 
 impl<B: Backend> Render<B> for Search {
-    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         let highlight_state = (
             state.blocks.is_active(Blokka::Search),
             state.blocks.is_hovered(Blokka::Search)
@@ -64,7 +64,7 @@ impl SearchResults {
 }
 
 impl<B: Backend> Render<B> for SearchResults {
-    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         let highlight_state = (
             state.blocks.is_active(Blokka::Main),
             state.blocks.is_hovered(Blokka::Main)
