@@ -12,27 +12,17 @@ mod event;
 mod theme;
 mod client;
 
-use anyhow::Result;
+use tui::{ Terminal, Frame };
+use tui::backend::{ Backend, CrosstermBackend };
+use tui::layout::{ Layout, Constraint, Direction, Rect };
+use crossterm::{ ExecutableCommand, execute, cursor::MoveTo };
+use crossterm::terminal::{ enable_raw_mode, disable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, SetTitle };
 
-use tui::{
-    backend::{ Backend, CrosstermBackend },
-    layout::{ Layout, Constraint, Direction, Rect },
-    Terminal, Frame
-};
-
-use crossterm::{
-    ExecutableCommand,
-    execute,
-    terminal::{ enable_raw_mode, disable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, SetTitle },
-    cursor::MoveTo
-};
-
-use futures_util::Stream;
-use futures_util::StreamExt;
+use futures_util::{ StreamExt, pin_mut };
 use tracing_subscriber::{ EnvFilter, FmtSubscriber };
-use mpd_client::{ Client, Subsystem, commands };
 use tokio::net::TcpStream;
-use std::io::{ Stdout, stdout };
+use mpd_client::{ Client, Subsystem };
+use anyhow::Result;
 
 pub const SMALL_TERMINAL_WIDTH: u16 = 150;
 pub const SMALL_TERMINAL_HEIGHT: u16 = 45;
@@ -49,13 +39,12 @@ async fn main() -> Result<()> {
         .init();
 
     let connection = TcpStream::connect("localhost:6600").await?;
-    // let connection = UnixSocket::connect("/run/user/1000/mpd").await?;
     let (client, mut state_changes) = Client::connect(connection).await?;
-    futures_util::pin_mut!(state_changes);
+    // pin_mut!(state_changes);
 
 
-    let mut stdout = std::io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
+    let stdout = std::io::stdout();
+    execute!(&stdout, EnterAlternateScreen)?;
     enable_raw_mode()?;
 
     let mut backend = CrosstermBackend::new(stdout);
@@ -66,7 +55,7 @@ async fn main() -> Result<()> {
 
     let mut state = State::new(client.clone()).await?;
     let events = event::Events::new();
-    futures_util::pin_mut!(events);
+    pin_mut!(events);
 
     loop {
         if let Ok(size) = terminal.backend().size() {
@@ -107,7 +96,7 @@ async fn main() -> Result<()> {
             terminal.hide_cursor()?;
         }
 
-        // crossterm events
+        // backend events
         if let Some(event::Event::Input(key)) = events.next().await {
             if state.blocks.active==Some(Blokka::Search) {
                 if let event::Key::Char(_) = key {
@@ -143,11 +132,9 @@ async fn main() -> Result<()> {
             }
         }
 
-        // mpd events
+        // mpd events (doesn't work yet)
         match futures::poll!(state_changes.next()) {
             futures::task::Poll::Ready(x) => {
-                state.blocks.active=Some(Blokka::Search);
-
                 match x.transpose()? {
                     Some(Subsystem::Player) => state.blocks.playbar=Playbar::new(client.clone()).await, 
                     Some(Subsystem::Queue) => {println!("queue")},
@@ -159,16 +146,7 @@ async fn main() -> Result<()> {
             },
 
             futures::task::Poll::Pending => {}
-        }
-
-        // match state_changes.next().await.transpose()? {
-        //     Some(Subsystem::Player) => state.blocks.playbar=Playbar::new(client.clone()).await, 
-        //     Some(Subsystem::Queue) => {println!("queue")},
-        //     Some(Subsystem::StoredPlaylist) => {},
-        //     Some(Subsystem::Update) => {}
-        //     Some(Subsystem::Database) => {}
-        //     _ => { continue; }
-        // }        
+        }    
     }
 
     // close strofa
