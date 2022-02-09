@@ -1,17 +1,14 @@
-use super::{ Blokka, State, Render, TableHeaderItem, Main, Index, get_color, selectable_table, selectable_list, get_percentage_width };
-use mpd_client::{ Client, commands, commands::responses::SongInQueue };
+use crate::{ Render, State };
+use super::{ Blokka, TableHeaderItem, SelectableList, Index };
+use super::{ get_color, get_percentage_width, selectable_list, selectable_table };
+use mpd_client::{ Client, commands::{ self, responses::SongInQueue } };
 use tui::{ 
-    Frame,
-    backend::Backend, 
-    layout::{ Rect }, 
-    style::Style, 
-    text::{Span, Text}, 
+    Frame, backend::Backend, layout::Rect, style::Style, text::{ Span, Text }, 
     widgets::{ Block, Borders, BorderType, ListItem, Paragraph } 
 };
 
 #[derive(Default)]
 pub struct Search {
-    pub index: usize,
     pub cursor_position: u16,
     pub query: String,
 }
@@ -38,17 +35,12 @@ impl<B: Backend> Render<B> for Search {
     }    
 }
 
-
-
-
-
-//results
 pub struct SearchResults {
     pub index: Index,
     pub query: String,
 }
 
-impl Main for SearchResults {
+impl SelectableList for SearchResults {
     fn index(&mut self) -> &mut Index {
         &mut self.index
     }
