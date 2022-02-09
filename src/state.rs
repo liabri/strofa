@@ -1,18 +1,45 @@
 use crate::block::{ Blokka, MainBlock, Library, Podcasts, Artists, Queue, Albums, SearchResults, Main, Playlists, Search, Sort, Playbar, Tracks, TrackKind, AlbumKind };
 use crate::event::Key;
 use crate::theme::Theme;
+use crate::client::StrofaClient;
 
+use anyhow::Result;
 use std::collections::{ VecDeque, HashMap };
 use tui::layout::Rect;
 use mpd_client::Client;
 
 pub struct State {
+    // pub chunks: Chunks,
     pub blocks: Blocks,
     pub size: Rect,
     pub theme: Theme,
     pub keys: KeyBindings,
     pub client: Client
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 impl State {
     pub async fn new(client: Client) -> Result<Self> {
@@ -29,6 +56,7 @@ impl State {
         match cmd {
             // binds manipulating ui
             "to_queue" => self.blocks.set_main(MainBlock::Queue(Queue::new(self.client.clone()).await?)),
+            // "toggle_top" => self.blocks
             "to_playlists" => self.blocks.set_active(Blokka::Playlists),
             "search" => self.blocks.set_active(Blokka::Search),
           
@@ -44,8 +72,6 @@ impl State {
             "seek_backwards" => self.client.seek_backwards(10).await?,
             "shuffle" => self.client.toggle_shuffle().await?,
             "repeat" => self.client.toggle_repeat().await?,
-
-
             // "jump_to_start" => self.blocks.playbar.jump_to_start(self.client.clone()).await,
 
             _ => {},
@@ -278,6 +304,7 @@ impl Default for KeyBindings {
         map.insert(Key::Backspace, "back".to_string());
         map.insert(Key::Char('q'), "to_queue".to_string());
         map.insert(Key::Char('e'), "to_playlists".to_string());
+        map.insert(Key::Ctrl('b'), "toggle_top".to_string());
 
         map.insert(Key::Char('v'), "jump_to_start".to_string());
         map.insert(Key::Char('z'), "jump_to_end".to_string());
@@ -305,82 +332,4 @@ impl Default for KeyBindings {
 
         Self(map)
     }
-}
-
-use async_trait::async_trait;
-use anyhow::Result;
-use mpd_client::{ CommandError, commands, commands::responses::{ PlayState  }};
-use std::time::Duration;
-
-#[async_trait]
-pub trait Fnx {
-    async fn toggle_playback(&self) -> Result<(), CommandError>;
-    async fn set_volume(&self, o: i8) -> Result<(), CommandError>;
-    async fn next_track(&self) -> Result<(), CommandError>;
-    async fn previous_track(&self) -> Result<(), CommandError>;
-    async fn seek_forwards(&self, o: u64) -> Result<(), CommandError>;
-    async fn seek_backwards(&self, o: u64) -> Result<(), CommandError>;
-    async fn toggle_shuffle(&self) -> Result<(), CommandError>;
-    async fn toggle_repeat(&self) -> Result<(), CommandError>;
-}
-
-#[async_trait]
-impl Fnx for Client {
-    async fn toggle_playback(&self) -> Result<(), CommandError> {
-        let status = self.command(commands::Status).await?;
-        match status.state {
-            PlayState::Stopped => self.command(commands::SetPause(true)).await,
-            PlayState::Playing => self.command(commands::SetPause(true)).await,
-            PlayState::Paused => self.command(commands::Play::current()).await,
-        }
-    }
-
-    async fn set_volume(&self, o: i8) -> Result<(), CommandError> {
-        let current_volume = self.command(commands::Status).await?.volume;
-        let new_volume = (current_volume as i8)+o;
-        
-        let vol = if new_volume < 0 {
-            0
-        } else if new_volume > 100 {
-            100
-        } else {
-            new_volume
-        };
-
-        self.command(commands::SetVolume(vol.try_into().unwrap())).await
-    }
-
-    async fn next_track(&self) -> Result<(), CommandError> {
-        self.command(commands::Next).await
-    }
-
-    async fn previous_track(&self) -> Result<(), CommandError> {
-        self.command(commands::Previous).await
-    }
-
-    async fn seek_forwards(&self, o: u64) -> Result<(), CommandError> {
-        self.command(commands::Seek(commands::SeekMode::Forward(Duration::from_secs(o)))).await
-    }
-
-    async fn seek_backwards(&self, o: u64) -> Result<(), CommandError> {
-        self.command(commands::Seek(commands::SeekMode::Backward(Duration::from_secs(o)))).await
-    }
-
-    async fn toggle_shuffle(&self) -> Result<(), CommandError> {
-        let current_shuffle = self.command(commands::Status).await?.random;
-        self.command(commands::SetRandom(!current_shuffle)).await
-    }
-
-    async fn toggle_repeat(&self) -> Result<(), CommandError> {
-        let current_repeat = self.command(commands::Status).await?.repeat;
-        self.command(commands::SetRepeat(!current_repeat)).await
-    }
-
-    // async fn jump_to_start(&self, client: Client) {
-    //     if let Some(current_song) = &self.song {
-    //         let current_id = current_song.id;
-    //         let pos = commands::SongPosition(0);
-    //         client.command(commands::Move::id(current_id).to_position(pos)).await.unwrap();
-    //     }
-    // }
 }
