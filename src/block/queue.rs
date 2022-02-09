@@ -1,4 +1,4 @@
-use super::{ Blokka, State, Render, TableHeaderItem, Main, Index, selectable_table, get_percentage_width };
+use super::{ Blokka, State, Render, TableHeaderItem, SelectableList, Index, selectable_table, get_percentage_width };
 use mpd_client::{ Client, commands, commands::responses::SongInQueue };
 use tui::{ backend::Backend, layout::Rect, Frame };
 use anyhow::Result;
@@ -73,7 +73,7 @@ impl<B: Backend> Render<B> for Queue {
     }
 }
 
-impl Main for Queue {
+impl SelectableList for Queue {
     fn index(&mut self) -> &mut Index {
         &mut self.index
     }

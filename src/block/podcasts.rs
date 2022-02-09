@@ -1,4 +1,4 @@
-use super::{ Blokka, State, Render, TableHeaderItem, Main, Index, selectable_table, get_percentage_width };
+use super::{ Blokka, State, Render, TableHeaderItem, SelectableList, Index, selectable_table, get_percentage_width };
 use mpd_client::{ Client, commands, commands::responses::SongInQueue };
 use tui::{ backend::Backend, layout::Rect, Frame };
 
@@ -6,7 +6,7 @@ pub struct Podcasts {
     pub index: Index,
 }
 
-impl Main for Podcasts {
+impl SelectableList for Podcasts {
     fn index(&mut self) -> &mut Index {
         &mut self.index
     }

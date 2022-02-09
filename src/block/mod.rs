@@ -33,11 +33,11 @@ use crate::{ Element, Render };
 use crate::state::State;
 use crate::theme::get_color;
 
-pub use mpd_client::commands::responses::{ Song, SongInQueue, Playlist, PlayState };
-pub use mpd_client::{ Client, commands };
+use mpd_client::commands::responses::{ Song, SongInQueue, Playlist, PlayState };
+use mpd_client::{ Client, commands };
 use anyhow::Result;
 
-pub use tui::{
+use tui::{
     backend::Backend,
     layout::{ Constraint, Direction, Layout, Rect },
     style::{ Modifier, Style },
@@ -52,6 +52,7 @@ pub use tui::{
 //     async fn hovered_event(&self, key: Key) {
 // }
 
+// maybe move blocks into chunks rather than state directly.
 #[derive(Copy, Clone, PartialEq)]
 pub enum Blokka {
     Search,
@@ -69,7 +70,45 @@ pub enum Popup {
     Error
 }
 
+pub trait SelectableList {
+    fn index(&mut self) -> &mut Index;
+}
 
+pub enum MainBlock {
+    SearchResults(SearchResults),
+    Artists(Artists),
+    Albums(Albums),
+    Tracks(Tracks),
+    Podcasts(Podcasts),
+    Queue(Queue)
+}
+
+impl<B: Backend> Render<B> for MainBlock {
+    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
+        match self {
+            MainBlock::SearchResults(x) => x.render(f, state, layout_chunk),
+            MainBlock::Artists(x) => x.render(f, state, layout_chunk),
+            MainBlock::Albums(x) => x.render(f, state, layout_chunk),
+            MainBlock::Tracks(x) => x.render(f, state, layout_chunk),
+            MainBlock::Podcasts(x) => x.render(f, state, layout_chunk),
+            MainBlock::Queue(x) => x.render(f, state, layout_chunk),
+
+        }
+    }
+}
+
+impl SelectableList for MainBlock {
+    fn index(&mut self) -> &mut Index {
+        match self {
+            MainBlock::SearchResults(x) => x.index(), 
+            MainBlock::Artists(x) => x.index(), 
+            MainBlock::Albums(x) => x.index(), 
+            MainBlock::Tracks(x) => x.index(), 
+            MainBlock::Podcasts(x) => x.index(), 
+            MainBlock::Queue(x) => x.index(),
+        }
+    }
+}
 
 pub struct Index {
     pub inner: usize,
@@ -159,44 +198,4 @@ pub fn get_percentage_width(width: u16, percentage: f32) -> u16 {
      let padding = 3;
      let width = width - padding;
      (f32::from(width) * percentage) as u16
-}
-
-pub trait Main {
-    fn index(&mut self) -> &mut Index;
-}
-
-pub enum MainBlock {
-    SearchResults(SearchResults),
-    Artists(Artists),
-    Albums(Albums),
-    Tracks(Tracks),
-    Podcasts(Podcasts),
-    Queue(Queue)
-}
-
-impl<B: Backend> Render<B> for MainBlock {
-    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
-        match self {
-            MainBlock::SearchResults(x) => x.render(f, state, layout_chunk),
-            MainBlock::Artists(x) => x.render(f, state, layout_chunk),
-            MainBlock::Albums(x) => x.render(f, state, layout_chunk),
-            MainBlock::Tracks(x) => x.render(f, state, layout_chunk),
-            MainBlock::Podcasts(x) => x.render(f, state, layout_chunk),
-            MainBlock::Queue(x) => x.render(f, state, layout_chunk),
-
-        }
-    }
-}
-
-impl Main for MainBlock {
-    fn index(&mut self) -> &mut Index {
-        match self {
-            MainBlock::SearchResults(x) => x.index(), 
-            MainBlock::Artists(x) => x.index(), 
-            MainBlock::Albums(x) => x.index(), 
-            MainBlock::Tracks(x) => x.index(), 
-            MainBlock::Podcasts(x) => x.index(), 
-            MainBlock::Queue(x) => x.index(),
-        }
-    }
 }
