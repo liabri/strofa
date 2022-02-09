@@ -5,7 +5,7 @@ mod state;
 use state::State;
 
 mod block;
-use block::{ Blokka, Playbar };
+use block::{ Blokka, Playbar, Render };
 
 mod event;
 mod theme;
@@ -31,9 +31,12 @@ use futures_util::StreamExt;
 use tracing_subscriber::{ EnvFilter, FmtSubscriber };
 use mpd_client::{ Client, Subsystem, commands };
 use tokio::net::TcpStream;
+use std::io::{ Stdout, stdout };
 
 pub const SMALL_TERMINAL_WIDTH: u16 = 150;
 pub const SMALL_TERMINAL_HEIGHT: u16 = 45;
+
+pub type StrofaBackend = CrosstermBackend<Stdout>;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -51,7 +54,7 @@ async fn main() -> Result<()> {
     execute!(stdout, EnterAlternateScreen)?;
     enable_raw_mode()?;
 
-    let mut backend = CrosstermBackend::new(&stdout);
+    let mut backend: StrofaBackend = CrosstermBackend::new(stdout);
     backend.execute(SetTitle("strofa"))?;
 
     let mut terminal = Terminal::new(backend)?;
@@ -85,12 +88,9 @@ async fn main() -> Result<()> {
                 .split(f.size());
 
 
-            // state.chunks.top.render(f, &state, parent_layout[0]);
-            // state.chunks.centre.render(f, &state, parent_layout[1]);
-            // state.chunks.left.render(f, &state, parent_layout[2]);
-            block::top(f, &state, parent_layout[0]);
-            block::centre(f, &state, parent_layout[1]);
-            block::bottom(f, &state, parent_layout[2]);
+            state.chunks.top.render(f, &state, parent_layout[0]);
+            state.chunks.centre.render(f, &state, parent_layout[1]);
+            state.chunks.bottom.render(f, &state, parent_layout[2]);
         })?;
 
         if state.blocks.active==Some(Blokka::Search) {
@@ -170,7 +170,8 @@ async fn main() -> Result<()> {
     // close strofa
     terminal.show_cursor()?;
     disable_raw_mode()?;
-    execute!(&stdout, LeaveAlternateScreen)?;
+    let mut stdout = std::io::stdout();
+    execute!(stdout, LeaveAlternateScreen)?;
 
     Ok(())
 }
