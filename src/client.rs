@@ -15,6 +15,7 @@ pub trait StrofaClient {
     async fn toggle_shuffle(&self) -> Result<(), CommandError>;
     async fn toggle_repeat(&self) -> Result<(), CommandError>;
     async fn search(&self, query: &str) -> Result<Vec<Song>, CommandError>;
+    async fn clear_queue(&self) -> Result<(), CommandError>;
 }
 
 #[async_trait]
@@ -80,5 +81,9 @@ impl StrofaClient for Client {
     async fn search(&self, query: &str) -> Result<Vec<Song>, CommandError> {
         let filter = Filter::new(Tag::Name, Operator::Contain, query.to_string());
         self.command(commands::Find::new(filter)).await
+    }
+
+    async fn clear_queue(&self) -> Result<(), CommandError> {
+        self.command(commands::ClearQueue).await
     }
 }

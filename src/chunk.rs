@@ -34,7 +34,7 @@ impl<B: 'static + Backend> Chunks<B> {
 pub struct Chunk<B, T> {
     children: Vec<Element<B>>,
     show: bool,
-    _kind: PhantomData<T>,
+    _location: PhantomData<T>,
 }
 
 impl<B: Backend, T> Chunk<B, T> {
@@ -42,7 +42,7 @@ impl<B: Backend, T> Chunk<B, T> {
         Ok(Self {
             children,
             show: true,
-            _kind: PhantomData,
+            _location: PhantomData,
         })
     }
 
