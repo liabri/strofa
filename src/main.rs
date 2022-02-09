@@ -36,7 +36,7 @@ use std::io::{ Stdout, stdout };
 pub const SMALL_TERMINAL_WIDTH: u16 = 150;
 pub const SMALL_TERMINAL_HEIGHT: u16 = 45;
 
-pub type StrofaBackend = CrosstermBackend<Stdout>;
+// pub type StrofaBackend = CrosstermBackend<Stdout>;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
     execute!(stdout, EnterAlternateScreen)?;
     enable_raw_mode()?;
 
-    let mut backend: StrofaBackend = CrosstermBackend::new(stdout);
+    let mut backend = CrosstermBackend::new(stdout);
     backend.execute(SetTitle("strofa"))?;
 
     let mut terminal = Terminal::new(backend)?;

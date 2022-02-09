@@ -3,13 +3,14 @@ use crate::event::Key;
 use crate::theme::Theme;
 use crate::client::StrofaClient;
 
+use tui::backend::Backend;
 use anyhow::Result;
 use std::collections::{ VecDeque, HashMap };
 use tui::layout::Rect;
 use mpd_client::Client;
 
-pub struct State {
-    pub chunks: Chunks,
+pub struct State<B> {
+    pub chunks: Chunks<B>,
     pub blocks: Blocks,
     pub size: Rect,
     pub theme: Theme,
@@ -17,10 +18,10 @@ pub struct State {
     pub client: Client
 }
 
-impl State {
+impl<B: 'static + Backend> State<B> {
     pub async fn new(client: Client) -> Result<Self> {
         Ok(Self {
-            chunks: Chunks::new().await?,
+            chunks: Chunks::<B>::new().await?,
             blocks: Blocks::new(client.clone()).await?,
             size: Rect::default(),
             theme: Theme::default(),

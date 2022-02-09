@@ -28,7 +28,7 @@ impl Sort {
 }
 
 impl<B: Backend> Render<B> for Sort {
-    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         let highlight_state = (
             state.blocks.is_active(Blokka::Sort),
             state.blocks.is_hovered(Blokka::Sort)

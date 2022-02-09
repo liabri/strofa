@@ -32,7 +32,7 @@ impl Playbar {
 }
 
 impl<B: Backend> Render<B> for Playbar {
-    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
+    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         if let Some(song) = &self.song {
             if let Some(title) = song.song.title() {
                 let playbar = Block::default()
