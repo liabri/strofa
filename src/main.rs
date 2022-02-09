@@ -4,6 +4,9 @@
 mod state;
 use state::State;
 
+mod keybindings;
+use keybindings::KeyBindings;
+
 mod block;
 use block::{ Blokka, Playbar };
 
@@ -119,7 +122,7 @@ async fn main() -> Result<()> {
                 },
 
                 _ if let Some(cmd) = state.keys.0.clone().get(&key) => {
-                    state.global_keybinds(&cmd.clone()).await?;
+                    KeyBindings::execute(&mut state, &cmd.clone()).await?;
                 },
 
                 _ => {
