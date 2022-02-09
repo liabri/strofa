@@ -17,7 +17,7 @@ pub enum TrackKind {
 }
 
 impl Tracks {
-    pub async fn new(kind: TrackKind, client: Client) -> Result<Self> {
+    pub async fn new(kind: TrackKind, client: &Client) -> Result<Self> {
         let tracks: Vec<Song> = match kind {
             TrackKind::Playlist(ref name) => client.command(commands::GetPlaylist(name.to_string())).await?,
              _ => Vec::new(),
@@ -30,7 +30,7 @@ impl Tracks {
         })
     }
 
-    pub async fn play(&self, client: Client, index: usize) {
+    pub async fn play(&self, client: &Client, index: usize) {
         // let song = self.tracks.get(index).unwrap();
         // client.command(commands::Play::song(song)).await.unwrap();
     }
