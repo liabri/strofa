@@ -65,28 +65,7 @@ impl<B: 'static + Backend> State<B> {
         // self.blocks.active.active_key_event();
 
         match self.blocks.active {
-            Some(Blokka::Search) => {
-                match key {
-                    Key::Enter => { 
-                        let query = self.blocks.search.query.clone();
-                        self.blocks.main = MainBlock::SearchResults(SearchResults::new(self.client.clone(), query).await.unwrap());
-                        self.blocks.set_active(Blokka::Main);
-                        self.blocks.hovered = Blokka::Main;
-                    },
-
-                    Key::Char(c) => {
-                        self.blocks.search.query.push(c);
-                        self.blocks.search.cursor_position+=1;
-                    },
-
-                    Key::Backspace => {
-                        self.blocks.search.query.pop();
-                        self.blocks.search.cursor_position-=1;
-                    }
-
-                    _ => {}
-                }
-            },
+            Some(Blokka::Search) => Search::active_key_event(self, key).await,
 
             Some(Blokka::Sort) => {},
             Some(Blokka::Library) => {
@@ -270,13 +249,11 @@ impl Blocks {
     }
 
     pub fn is_hovered(&self, blk: Blokka) -> bool {
-        if self.hovered==blk { return true; }
-        false
+        if self.hovered==blk { return true; } false
     }
 
     pub fn is_active(&self, blk: Blokka) -> bool {
-        if self.active==Some(blk) { return true; }
-        false
+        if self.active==Some(blk) { return true; } false
     } 
 
     pub fn set_main(&mut self, blk: MainBlock) {

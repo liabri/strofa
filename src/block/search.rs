@@ -37,6 +37,53 @@ impl<B: Backend> Render<B> for Search {
     }    
 }
 
+use crate::block::MainBlock;
+use crate::event::Key;
+impl Search {
+    pub async fn active_key_event<B>(state: &mut State<B>, key: Key) where B: Backend {
+        match key {
+            Key::Enter => { 
+                let query = state.blocks.search.query.clone();
+                state.blocks.main = MainBlock::SearchResults(SearchResults::new(&state.client, query).await.unwrap());
+                state.blocks.set_active(Blokka::Main);
+                state.blocks.hovered = Blokka::Main;
+            },
+
+            Key::Char(c) => {
+                state.blocks.search.query.push(c);
+                state.blocks.search.cursor_position+=1;
+            },
+
+            Key::Backspace => {
+                state.blocks.search.query.pop();
+                state.blocks.search.cursor_position-=1;
+            }
+
+            _ => {}
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct SearchResults {
     pub index: Index,
     pub songs: Vec<Song>
@@ -49,7 +96,7 @@ impl SelectableList for SearchResults {
 }
 
 impl SearchResults {
-    pub async fn new(client: Client, query: String) -> Result<Self> {
+    pub async fn new(client: &Client, query: String) -> Result<Self> {
         Ok(Self {
             index: Index::new(50),
             songs: client.search(&query).await?
