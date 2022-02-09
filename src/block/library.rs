@@ -51,3 +51,28 @@ impl<B: Backend> Render<B> for Library {
         );
     }    
 }
+
+use crate::block::{ MainBlock, Podcasts, Artists, Albums, AlbumKind, Tracks, TrackKind, Queue };
+use crate::event::Key;
+impl Library {
+    pub async fn active_key_event<B>(state: &mut State<B>, key: Key) where B: Backend {
+        match key {
+            Key::Up => state.blocks.library.index.dec(),
+            Key::Down => state.blocks.library.index.inc(),
+            Key::Enter => {
+                let index = state.blocks.library.index.inner;
+                let main_block = match state.blocks.library.entries[index] {
+                    "Queue" => MainBlock::Queue(Queue::new(&state.client).await.unwrap()),
+                    "Tracks" => MainBlock::Tracks(Tracks::new(TrackKind::All, &state.client).await.unwrap()),
+                    "Albums" => MainBlock::Albums(Albums::new(AlbumKind::All).await),
+                    "Artists" => MainBlock::Artists(Artists::new().await),
+                    "Podcasts" => MainBlock::Podcasts(Podcasts::new().await),
+                    _ => panic!("view not found"),
+                };
+
+                state.blocks.set_main(main_block);
+            }
+            _ => {},
+        }
+    }
+}

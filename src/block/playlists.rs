@@ -46,3 +46,21 @@ impl<B: Backend> Render<B> for Playlists {
         );
     }    
 }
+
+use crate::block::{ Tracks, TrackKind, MainBlock };
+use crate::event::Key;
+impl Playlists {
+    pub async fn active_key_event<B>(state: &mut State<B>, key: Key) where B: Backend {
+        match key {
+            Key::Up => state.blocks.playlists.index.dec(),
+            Key::Down => state.blocks.playlists.index.inc(),   
+            Key::Enter => {
+                let index = state.blocks.playlists.index.inner;  
+                let name = state.blocks.playlists.entries.get(0).unwrap().name.to_string();
+                state.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Playlist(name), &state.client).await.unwrap()));
+            },
+
+            _ => {}
+        }  
+    }
+}
