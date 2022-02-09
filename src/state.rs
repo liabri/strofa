@@ -66,42 +66,9 @@ impl<B: 'static + Backend> State<B> {
 
         match self.blocks.active {
             Some(Blokka::Search) => Search::active_key_event(self, key).await,
-
             Some(Blokka::Sort) => {},
-            Some(Blokka::Library) => {
-                match key {
-                    Key::Up => self.blocks.library.index.dec(),
-                    Key::Down => self.blocks.library.index.inc(),
-                    Key::Enter => {
-                        let index = self.blocks.library.index.inner;
-                        let main_block = match self.blocks.library.entries[index] {
-                            "Queue" => MainBlock::Queue(Queue::new(&self.client).await.unwrap()),
-                            "Tracks" => MainBlock::Tracks(Tracks::new(TrackKind::All, &self.client).await.unwrap()),
-                            "Albums" => MainBlock::Albums(Albums::new(AlbumKind::All).await),
-                            "Artists" => MainBlock::Artists(Artists::new().await),
-                            "Podcasts" => MainBlock::Podcasts(Podcasts::new().await),
-                            _ => panic!("view not found"),
-                        };
-
-                        self.blocks.set_main(main_block);
-                    }
-                    _ => {},
-                }
-            },
-
-            Some(Blokka::Playlists) => {
-                match key {
-                    Key::Up => self.blocks.playlists.index.dec(),
-                    Key::Down => self.blocks.playlists.index.inc(),   
-                    Key::Enter => {
-                        let index = self.blocks.playlists.index.inner;  
-                        let name = self.blocks.playlists.entries.get(0).unwrap().name.to_string();
-                        self.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Playlist(name), &self.client).await.unwrap()));
-                    },
-
-                    _ => {}
-                }  
-            },
+            Some(Blokka::Library) => Library::active_key_event(self, key).await,
+            Some(Blokka::Playlists) => Playlists::active_key_event(self, key).await,
 
             Some(Blokka::Main) => { 
                 match key {
