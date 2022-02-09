@@ -9,6 +9,7 @@ use block::{ Blokka, Playbar };
 
 mod event;
 mod theme;
+mod client;
 
 use anyhow::Result;
 
@@ -66,12 +67,14 @@ async fn main() -> Result<()> {
         }
 
         // drawing 
+        terminal.autoresize()?;
         terminal.draw(|f| {
             let margin = if state.size.height > SMALL_TERMINAL_HEIGHT { 1 } else { 0 };
             let constraints = //if state.size.width > SMALL_TERMINAL_WIDTH {
                 // vec![Constraint::Min(1), Constraint::Length(6)]
             // } else {
                 vec![Constraint::Length(3), Constraint::Min(1), Constraint::Length(6)]
+                // vec![Constaint::]
             // };
             ;
 
@@ -81,6 +84,10 @@ async fn main() -> Result<()> {
                 .margin(margin)
                 .split(f.size());
 
+
+            // state.chunks.top.render(f, &state, parent_layout[0]);
+            // state.chunks.centre.render(f, &state, parent_layout[1]);
+            // state.chunks.left.render(f, &state, parent_layout[2]);
             block::top(f, &state, parent_layout[0]);
             block::centre(f, &state, parent_layout[1]);
             block::bottom(f, &state, parent_layout[2]);
