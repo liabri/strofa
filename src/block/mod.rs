@@ -1,33 +1,33 @@
-mod albums;
-pub use albums::{ Albums, AlbumKind };
+// mod albums;
+// pub use albums::{ Albums, AlbumKind };
 
-mod artists;
-pub use artists::Artists;
+// mod artists;
+// pub use artists::Artists;
 
 mod library;
 pub use library::Library;
 
-mod playbar;
-pub use playbar::Playbar;
+// mod playbar;
+// pub use playbar::Playbar;
 
 mod playlists;
 pub use playlists::Playlists;
 
-mod podcasts;
-pub use podcasts::Podcasts;
+// mod podcasts;
+// pub use podcasts::Podcasts;
 
-mod search;
-pub use search::Search;
-pub use search::SearchResults;
+// mod search;
+// pub use search::Search;
+// pub use search::SearchResults;
 
-mod sort;
-pub use sort::Sort;
+// mod sort;
+// pub use sort::Sort;
 
-mod tracks;
-pub use tracks::{ Tracks, TrackKind };
+// mod tracks;
+// pub use tracks::{ Tracks, TrackKind };
 
-mod queue;
-pub use queue::Queue;
+// mod queue;
+// pub use queue::Queue;
 
 use crate::{ Element, Render }; 
 use crate::state::State;
@@ -46,130 +46,32 @@ use tui::{
     Frame,
 };
 
-//eventually move key events from state to each individual block.
-// pub trait KeyEvent {
-//     async fn active_event(&self, key: Key);
-//     async fn hovered_event(&self, key: Key) {
-// }
-
-
-
- 
-
 
 
 // trying funky stuff down here 
+// maybe move blocks into chunks rather than a `blocks` struct directly.
 
 
+use async_trait::async_trait;
+use std::marker::PhantomData;
+use crate::event::Key;
 
-// maybe move blocks into chunks rather than state directly.
-// use std::marker::PhantomData;
-// use std::collections::VecDeque;
-
-// pub struct Blocks {    
-//     pub search: BlokkaK<Search>,
-//     pub sort: BlokkaK<Sort>,
-//     pub library: BlokkaK<Library>,
-//     pub playlists: BlokkaK<Playlists>,
-//     pub playbar: BlokkaK<Playbar>,
-//     pub main_block: Box<dyn Blokk>,
-//     // pub popup_block: Option<BlokkaK<dyn Popup>>, 
-//     pub active: Option<&BlokkaK<T>>,
-//     pub hovered: &BlokkaK<U>,
-//     // hover_history: VecDeque<BlokkaK>,
-// }
-
-// pub struct BlokkaK<T> {
-//     inner: T
-// }
-
-// impl<T> BlokkaK<T> {
-//     pub fn new(inner: T) -> Self {
-//         Self {
-//             inner
-//         }
-//     }
-// }
-
-// pub trait Blokk {}
-// impl Blokk for StandardBlock<T> {}
-// impl Blokk for PopupBlock<T> {}
-// impl Blokk for IndexedBlock<T> {}
-
-
-
-// pub struct IndexedBlokka<T> {
-//     index: Index,
-//     inner: T
-// }
-
-// impl<T> IndexedBlokka<T> {
-//     pub fn new(inner: T, max: usize) -> Self {
-//         Self {
-//             index: Index::new(max),
-//             inner
-//         }
-//     }
-// }
-
-use std::collections::VecDeque;
-
-
-pub struct Blocks {    
-    pub search: Search,
-    pub sort: Sort,
-    pub library: Library,
-    pub playlists: Playlists,
-    pub playbar: Playbar,
-    pub main: MainBlock,
-    pub active: Option<Blokka>,
-    pub hovered: Blokka,
-    pub hover_history: VecDeque<Blokka>,
-}
-
-impl Blocks {
-    pub async fn new(client: &Client) -> Result<Self> {
-        Ok(Self {
-            search: Search::default(),
-            sort: Sort::new().await,
-            library: Library::new().await,
-            playlists: Playlists::new(client).await?,
-            playbar: Playbar::new(client).await,
-            main: MainBlock::Queue(Queue::new(client).await?),
-            active: None,
-            hovered: Blokka::Library,
-            hover_history: VecDeque::new() 
-        })
-    }
-
-    pub fn is_hovered(&self, blk: Blokka) -> bool {
-        if self.hovered==blk { return true; } false
-    }
-
-    pub fn is_active(&self, blk: Blokka) -> bool {
-        if self.active==Some(blk) { return true; } false
-    } 
-
-    pub fn set_main(&mut self, blk: MainBlock) {
-        self.main = blk;
-        self.set_active(Blokka::Main);
-    }
-
-
-    pub fn set_active(&mut self, blk: Blokka) {
-        self.active = Some(blk);
-        self.hovered = blk;
-    }
-
-    pub fn set_hover(&mut self, blk: &Blokka) {
-        self.hover_history.truncate(5);
-        self.hover_history.push_front(self.hovered.clone());
-        self.hovered = blk.clone();
-    }  
+pub struct Blocks<B> {    
+    // pub search: StandardBlock<Search>,
+    // pub sort: IndexedBlock<Sort>,
+    pub library: IndexedBlock<Library>,
+    pub playlists: IndexedBlock<Playlists>,
+    // pub main_block: Box<dyn BlockTrait>,
+    // pub playbar: StandardBlock<Playbar>,
+    // pub popup_block: Option<BlokkaK<dyn Popup>>, 
+    pub active: Option<BlockKind>,//Option<&BlokkaK<T>>,
+    pub hovered: BlockKind,//&BlokkaK<U>,
+    pub hover_history: VecDeque<BlockKind>,
+    _backend: PhantomData<B>,
 }
 
 #[derive(Copy, Clone, PartialEq)]
-pub enum Blokka {
+pub enum BlockKind {
     Search,
     Sort,
     Library,
@@ -178,45 +80,210 @@ pub enum Blokka {
     Main
 }
 
-pub trait SelectableList {
-    fn index(&mut self) -> &mut Index;
-}
+impl<B: Backend> Blocks<B> {
+    pub async fn new(client: &Client) -> Result<Self> {
+        Ok(Self {
+            // search: Search::default(),
+            // sort: Sort::new().await,
+            library: IndexedBlock::<Library>::new().await?,
+            playlists: IndexedBlock::<Playlists>::new(client).await?,
+            // playbar: Playbar::new(client).await,
+            // main: MainBlock::Queue(Queue::new(client).await?),
+            active: None,
+            hovered: BlockKind::Library,
+            hover_history: VecDeque::new(),
+            _backend: PhantomData,
+        })
+    }
 
-pub enum MainBlock {
-    SearchResults(SearchResults),
-    Artists(Artists),
-    Albums(Albums),
-    Tracks(Tracks),
-    Podcasts(Podcasts),
-    Queue(Queue)
-}
-
-impl<B: Backend> Render<B> for MainBlock {
-    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
-        match self {
-            MainBlock::SearchResults(x) => x.render(f, state, layout_chunk),
-            MainBlock::Artists(x) => x.render(f, state, layout_chunk),
-            MainBlock::Albums(x) => x.render(f, state, layout_chunk),
-            MainBlock::Tracks(x) => x.render(f, state, layout_chunk),
-            MainBlock::Podcasts(x) => x.render(f, state, layout_chunk),
-            MainBlock::Queue(x) => x.render(f, state, layout_chunk),
-
+    pub fn get_block_mut(&mut self, kind: BlockKind) -> &mut dyn BlockTrait<B> {
+        match kind {
+            // BlockKind::Playlists => (&mut self.playlists) as _,
+            // _ => (&mut self.playlists) as _,
+            _ => todo!()
         }
     }
+
+    pub fn is_hovered(&self, blk: BlockKind) -> bool {
+        if self.hovered==blk { return true; } false
+    }
+
+    pub fn is_active(&self, blk: BlockKind) -> bool {
+        if self.active==Some(blk) { return true; } false
+    } 
+
+    pub fn active_block(&mut self) -> Option<&mut dyn BlockTrait<B>> {
+        Some(self.get_block_mut(self.active?))
+    }
+
+    pub fn hovered_block(&mut self) -> &mut dyn BlockTrait<B> {
+        self.get_block_mut(self.hovered)
+    }
+
+    // pub pub fn set_main(&mut self, blk: MainBlock) {
+    //     self.main = blk;
+    //     self.set_active(Blokka::Main);
+    // }
+
+    pub fn set_active(&mut self, blk: BlockKind) {
+        self.active = Some(blk);
+        self.hovered = blk;
+    }
+
+    pub fn set_hover(&mut self, blk: BlockKind) {
+        self.hover_history.truncate(5);
+        self.hover_history.push_front(self.hovered.clone());
+        self.hovered = blk.clone();
+    } 
 }
 
-impl SelectableList for MainBlock {
-    fn index(&mut self) -> &mut Index {
-        match self {
-            MainBlock::SearchResults(x) => x.index(), 
-            MainBlock::Artists(x) => x.index(), 
-            MainBlock::Albums(x) => x.index(), 
-            MainBlock::Tracks(x) => x.index(), 
-            MainBlock::Podcasts(x) => x.index(), 
-            MainBlock::Queue(x) => x.index(),
-        }
-    }
+#[async_trait]
+pub trait BlockTrait<B: Backend> {
+    async fn active_event(state: &mut State<B>, key: Key) where Self: Sized;
+    async fn hovered_event(state: &mut State<B>, key: Key) where Self: Sized;
 }
+
+
+
+pub struct StandardBlock<T> {
+    inner: T
+}
+
+pub struct IndexedBlock<T> {
+    index: Index,
+    inner: T
+}
+
+
+// pub struct PopupBlock<T> {
+//     inner: T
+// }
+
+// impl<T> PopupBlock<T> {
+//     pub fn new(inner: T) -> Self {
+//         Self {
+//             inner
+//         }
+//     }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+//----------------------
+
+use std::collections::VecDeque;
+
+
+// pub struct Blocks {    
+//     pub search: Search,
+//     pub sort: Sort,
+//     pub library: Library,
+//     pub playlists: Playlists,
+//     pub playbar: Playbar,
+//     pub main: MainBlock,
+//     pub active: Option<Blokka>,
+//     pub hovered: Blokka,
+//     pub hover_history: VecDeque<Blokka>,
+// }
+
+// impl Blocks {
+//     pub async fn new(client: &Client) -> Result<Self> {
+//         Ok(Self {
+//             search: Search::default(),
+//             sort: Sort::new().await,
+//             library: Library::new().await,
+//             playlists: Playlists::new(client).await?,
+//             playbar: Playbar::new(client).await,
+//             main: MainBlock::Queue(Queue::new(client).await?),
+//             active: None,
+//             hovered: Blokka::Library,
+//             hover_history: VecDeque::new() 
+//         })
+//     }
+
+//     pub fn is_hovered(&self, blk: Blokka) -> bool {
+//         if self.hovered==blk { return true; } false
+//     }
+
+//     pub fn is_active(&self, blk: Blokka) -> bool {
+//         if self.active==Some(blk) { return true; } false
+//     } 
+
+//     pub fn set_main(&mut self, blk: MainBlock) {
+//         self.main = blk;
+//         self.set_active(Blokka::Main);
+//     }
+
+//     pub fn set_active(&mut self, blk: Blokka) {
+//         self.active = Some(blk);
+//         self.hovered = blk;
+//     }
+
+//     pub fn set_hover(&mut self, blk: &Blokka) {
+//         self.hover_history.truncate(5);
+//         self.hover_history.push_front(self.hovered.clone());
+//         self.hovered = blk.clone();
+//     }  
+// }
+
+// #[derive(Copy, Clone, PartialEq)]
+// pub enum Blokka {
+//     Search,
+//     Sort,
+//     Library,
+//     Playlists,
+//     Playbar,
+//     Main
+// }
+
+// pub trait SelectableList {
+//     fn index(&mut self) -> &mut Index;
+// }
+
+// pub enum MainBlock {
+//     SearchResults(SearchResults),
+//     Artists(Artists),
+//     Albums(Albums),
+//     Tracks(Tracks),
+//     Podcasts(Podcasts),
+//     Queue(Queue)
+// }
+
+// impl<B: Backend> Render<B> for MainBlock {
+//     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
+//         match self {
+//             MainBlock::SearchResults(x) => x.render(f, state, layout_chunk),
+//             MainBlock::Artists(x) => x.render(f, state, layout_chunk),
+//             MainBlock::Albums(x) => x.render(f, state, layout_chunk),
+//             MainBlock::Tracks(x) => x.render(f, state, layout_chunk),
+//             MainBlock::Podcasts(x) => x.render(f, state, layout_chunk),
+//             MainBlock::Queue(x) => x.render(f, state, layout_chunk),
+
+//         }
+//     }
+// }
+
+// impl SelectableList for MainBlock {
+//     fn index(&mut self) -> &mut Index {
+//         match self {
+//             MainBlock::SearchResults(x) => x.index(), 
+//             MainBlock::Artists(x) => x.index(), 
+//             MainBlock::Albums(x) => x.index(), 
+//             MainBlock::Tracks(x) => x.index(), 
+//             MainBlock::Podcasts(x) => x.index(), 
+//             MainBlock::Queue(x) => x.index(),
+//         }
+//     }
+// }
 
 pub struct Index {
     pub inner: usize,
@@ -302,7 +369,7 @@ where B: Backend {
     f.render_widget(table, layout_chunk);
 }
 
-pub fn get_percentage_width(width: u16, percentage: f32) -> u16 {
+fn get_percentage_width(width: u16, percentage: f32) -> u16 {
      let padding = 3;
      let width = width - padding;
      (f32::from(width) * percentage) as u16
