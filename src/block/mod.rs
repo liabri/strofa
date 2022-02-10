@@ -92,8 +92,8 @@ impl<B: 'static + Send + Backend> Blocks<B> {
 
     pub fn get_block_mut(&mut self, kind: BlockKind) -> &mut dyn BlockTrait<B> {
         match kind {
+            BlockKind::Library => &mut self.library as &mut dyn BlockTrait<B>,
             BlockKind::Playlists => &mut self.playlists as &mut dyn BlockTrait<B>,
-            // _ => (&mut self.playlists) as _,
             _ => todo!()
         }
     }
