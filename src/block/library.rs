@@ -67,7 +67,7 @@ impl<B: 'static + Send + Backend> BlockTrait<B> for IndexedBlock<Library> {
     }
 }
 
-impl<B: Backend> Render<B> for IndexedBlock<Library> {
+impl<B: 'static + Backend + Send> Render<B> for IndexedBlock<Library> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         let highlight_state = (
             state.blocks.is_active(BlockKind::Library),

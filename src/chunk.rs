@@ -18,7 +18,7 @@ pub struct Chunks<B> {
     pub bottom: Chunk<B, Bottom>,
 }
 
-impl<B: 'static + Backend> Chunks<B> {
+impl<B: 'static + Backend + Send> Chunks<B> {
     pub async fn new() -> Result<Self> {
         let mut centre_elements = Vec::new();
         centre_elements.push(Box::new(Chunk::<B, Left>::new(Vec::new())?) as Element<B>);
@@ -37,7 +37,7 @@ pub struct Chunk<B, T> {
     _location: PhantomData<T>,
 }
 
-impl<B: Backend, T> Chunk<B, T> {
+impl<B: Backend + Send, T> Chunk<B, T> {
     fn new(children: Vec<Element<B>>) -> Result<Self> {
         Ok(Self {
             children,
@@ -53,7 +53,7 @@ impl<B: Backend, T> Chunk<B, T> {
     }
 }
 
-impl<B: Backend> Render<B> for Chunk<B, Top> {
+impl<B: Backend + Send> Render<B> for Chunk<B, Top> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
@@ -67,7 +67,7 @@ impl<B: Backend> Render<B> for Chunk<B, Top> {
     }
 }
 
-impl<B: Backend> Render<B> for Chunk<B, Left> {
+impl<B: 'static + Backend + Send> Render<B> for Chunk<B, Left> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
@@ -85,7 +85,7 @@ impl<B: Backend> Render<B> for Chunk<B, Left> {
     }
 }
 
-impl<B: Backend> Render<B> for Chunk<B, Centre> {
+impl<B: Backend + Send> Render<B> for Chunk<B, Centre> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
@@ -99,7 +99,7 @@ impl<B: Backend> Render<B> for Chunk<B, Centre> {
     }
 }
 
-impl<B: Backend> Render<B> for Chunk<B, Bottom> {
+impl<B: Backend + Send> Render<B> for Chunk<B, Bottom> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
