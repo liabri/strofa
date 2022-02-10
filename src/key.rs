@@ -1,4 +1,4 @@
-use crate::block::{ Blokka, MainBlock, Library, Queue, SelectableList, Playlists, Search, Sort, Playbar };
+use crate::block::{ BlockKind, Playlists };//, MainBlock, Library, Queue, SelectableList, Playlists, Search, Sort, Playbar };
 use crate::chunk::Chunks;
 use crate::event::Key;
 use crate::theme::Theme;
@@ -53,13 +53,13 @@ impl Default for KeyBindings {
 }
 
 impl KeyBindings {
-    pub async fn execute<B>(state: &mut State<B>, cmd: &str) -> Result<()> where B: Backend {
+    pub async fn execute<B>(state: &mut State<B>, cmd: &str) -> Result<()> where B: 'static + Backend {
         match cmd {
             // binds manipulating ui
-            "to_queue" => state.blocks.set_main(MainBlock::Queue(Queue::new(&state.client).await?)),
+            // "to_queue" => state.blocks.set_main(MainBlock::Queue(Queue::new(&state.client).await?)),
             // "toggle_top" => self.blocks
-            "to_playlists" => state.blocks.set_active(Blokka::Playlists),
-            "search" => state.blocks.set_active(Blokka::Search),
+            "to_playlists" => state.blocks.set_active(BlockKind::Playlists),
+            "search" => state.blocks.set_active(BlockKind::Search),
           
             // binds manipulating mpd  
             "toggle_playback" => state.client.toggle_playback().await?,

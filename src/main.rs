@@ -1,5 +1,6 @@
 #![feature(async_stream)]
 #![feature(if_let_guard)]
+#![feature(async_await)]
 
 mod state;
 use state::State;
@@ -8,7 +9,7 @@ mod key;
 use key::KeyBindings;
 
 mod block;
-use block::{ Blokka, Playbar };
+use block::{ BlockKind, /*Playbar*/ };
 
 mod chunk;
 mod event;
@@ -31,7 +32,7 @@ pub const SMALL_TERMINAL_WIDTH: u16 = 150;
 pub const SMALL_TERMINAL_HEIGHT: u16 = 45;
 
 pub type Element<B> = Box<dyn Render<B>>;
-pub trait Render<B: Backend> {
+pub trait Render<B: Backend>: Send {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect);
 }
 
@@ -89,19 +90,19 @@ async fn main() -> Result<()> {
             state.chunks.bottom.render(f, &state, parent_layout[2]);
         })?;
 
-        if state.blocks.active==Some(Blokka::Search) {
-            terminal.show_cursor()?;
-            terminal.backend_mut().execute(MoveTo(
-              2 + state.blocks.search.cursor_position,
-              2,
-            ))?;
-        } else {
-            terminal.hide_cursor()?;
-        }
+        // if state.blocks.active==Some(Blokka::Search) {
+        //     terminal.show_cursor()?;
+        //     terminal.backend_mut().execute(MoveTo(
+        //       2 + state.blocks.search.cursor_position,
+        //       2,
+        //     ))?;
+        // } else {
+        //     terminal.hide_cursor()?;
+        // }
 
         // backend events
         if let Some(event::Event::Input(key)) = events.next().await {
-            if state.blocks.active==Some(Blokka::Search) {
+            if state.blocks.active==Some(BlockKind::Search) {
                 if let event::Key::Char(_) = key {
                     state.active_event(key).await;
                     continue;

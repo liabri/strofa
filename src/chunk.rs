@@ -61,8 +61,8 @@ impl<B: Backend> Render<B> for Chunk<B, Top> {
                 .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
                 .split(layout_chunk);
 
-            state.blocks.search.render(f, state, chunks[0]);
-            state.blocks.sort.render(f, state, chunks[1]);
+            // state.blocks.search.render(f, state, chunks[0]);
+            // state.blocks.sort.render(f, state, chunks[1]);
         }
     }
 }
@@ -94,7 +94,7 @@ impl<B: Backend> Render<B> for Chunk<B, Centre> {
                 .split(layout_chunk);
 
             self.render_children(f, state, chunks[0]);
-            state.blocks.main.render(f, state, chunks[1]);
+            // state.blocks.main.render(f, state, chunks[1]);
         }
     }
 }
@@ -107,7 +107,7 @@ impl<B: Backend> Render<B> for Chunk<B, Bottom> {
                 .constraints([Constraint::Percentage(100)].as_ref())
                 .split(layout_chunk);
 
-            state.blocks.playbar.render(f, state, chunks[0]);
+            // state.blocks.playbar.render(f, state, chunks[0]);
         }
     }
 }
