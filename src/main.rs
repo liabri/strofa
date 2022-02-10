@@ -9,7 +9,7 @@ mod key;
 use key::KeyBindings;
 
 mod block;
-use block::{ BlockKind, /*Playbar*/ };
+use block::{ Blocks, BlockKind, /*Playbar*/ };
 
 mod chunk;
 mod event;
@@ -104,7 +104,7 @@ async fn main() -> Result<()> {
         if let Some(event::Event::Input(key)) = events.next().await {
             if state.blocks.active==Some(BlockKind::Search) {
                 if let event::Key::Char(_) = key {
-                    state.active_event(key).await;
+                    Blocks::active_event(&mut state, key).await;
                     continue;
                 };
             }
@@ -128,9 +128,9 @@ async fn main() -> Result<()> {
 
                 _ => {
                     if let None = state.blocks.active {
-                        state.hovered_event(key).await;
+                        Blocks::hovered_event(&mut state, key).await;
                     } else {
-                        state.active_event(key).await; 
+                        Blocks::active_event(&mut state, key).await; 
                     }
                 }
             }
