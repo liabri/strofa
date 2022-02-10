@@ -1,21 +1,3 @@
-// mod albums;
-// pub use albums::{ Albums, AlbumKind };
-
-// mod artists;
-// pub use artists::Artists;
-
-mod library;
-pub use library::Library;
-
-// mod playbar;
-// pub use playbar::Playbar;
-
-mod playlists;
-pub use playlists::Playlists;
-
-// mod podcasts;
-// pub use podcasts::Podcasts;
-
 // mod search;
 // pub use search::Search;
 // pub use search::SearchResults;
@@ -23,11 +5,29 @@ pub use playlists::Playlists;
 // mod sort;
 // pub use sort::Sort;
 
+mod library;
+pub use library::Library;
+
+mod playlists;
+pub use playlists::Playlists;
+
+// mod playbar;
+// pub use playbar::Playbar;
+
+// mod podcasts;
+// pub use podcasts::Podcasts;
+
 // mod tracks;
 // pub use tracks::{ Tracks, TrackKind };
 
 // mod queue;
 // pub use queue::Queue;
+
+// mod albums;
+// pub use albums::{ Albums, AlbumKind };
+
+// mod artists;
+// pub use artists::Artists;
 
 use crate::{ Element, Render }; 
 use crate::state::State;
@@ -58,8 +58,8 @@ pub struct Blocks<B> {
     // pub main_block: Box<dyn BlockTrait>,
     // pub playbar: StandardBlock<Playbar>,
     // pub popup_block: Option<BlokkaK<dyn Popup>>, 
-    pub active: Option<BlockKind>,//Option<&BlokkaK<T>>,
-    pub hovered: BlockKind,//&BlokkaK<U>,
+    pub active: Option<BlockKind>,
+    pub hovered: BlockKind,
     pub hover_history: VecDeque<BlockKind>,
     _backend: PhantomData<B>,
 }
@@ -74,7 +74,7 @@ pub enum BlockKind {
     Main
 }
 
-impl<B: Backend> Blocks<B> {
+impl<B: 'static + Send + Backend> Blocks<B> {
     pub async fn new(client: &Client) -> Result<Self> {
         Ok(Self {
             // search: Search::default(),
@@ -92,7 +92,7 @@ impl<B: Backend> Blocks<B> {
 
     pub fn get_block_mut(&mut self, kind: BlockKind) -> &mut dyn BlockTrait<B> {
         match kind {
-            // BlockKind::Playlists => (&mut self.playlists) as _,
+            BlockKind::Playlists => &mut self.playlists as &mut dyn BlockTrait<B>,
             // _ => (&mut self.playlists) as _,
             _ => todo!()
         }

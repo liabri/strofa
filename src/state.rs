@@ -20,7 +20,7 @@ pub struct State<B> {
     pub client: Client
 }
 
-impl<B: 'static + Send + Backend> State<B> {
+impl<B: 'static + Backend + Send> State<B> {
     pub async fn new(client: Client) -> Result<Self> {
         Ok(Self {
             chunks: Chunks::<B>::new().await?,

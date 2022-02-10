@@ -25,7 +25,7 @@ impl IndexedBlock<Playlists> {
 }
 
 #[async_trait]
-impl<B: 'static + Send + Backend> BlockTrait<B> for IndexedBlock<Playlists> {
+impl<B: 'static + Backend + Send> BlockTrait<B> for IndexedBlock<Playlists> {
     async fn active_event(state: &mut State<B>, key: Key) {
         match key {
             // Key::Up => state.blocks.playlists.index.dec(),
@@ -49,7 +49,7 @@ impl<B: 'static + Send + Backend> BlockTrait<B> for IndexedBlock<Playlists> {
     }
 }
 
-impl<B: Backend> Render<B> for IndexedBlock<Playlists> {
+impl<B: 'static + Backend + Send> Render<B> for IndexedBlock<Playlists> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         let highlight_state = (
             state.blocks.is_active(BlockKind::Playlists),
