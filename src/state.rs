@@ -23,7 +23,7 @@ impl<B: 'static + Backend> State<B> {
     pub async fn new(client: Client) -> Result<Self> {
         Ok(Self {
             chunks: Chunks::<B>::new().await?,
-            blocks: Blocks::new(client.clone()).await?,
+            blocks: Blocks::new(&client).await?,
             size: Rect::default(),
             theme: Theme::default(),
             keys: KeyBindings::default(),

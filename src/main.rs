@@ -56,7 +56,7 @@ async fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    let mut state = State::new(client.clone()).await?;
+    let mut state = State::new(client).await?;
     let events = event::Events::new();
     pin_mut!(events);
 
@@ -139,7 +139,7 @@ async fn main() -> Result<()> {
         match futures::poll!(state_changes.next()) {
             futures::task::Poll::Ready(x) => {
                 match x.transpose()? {
-                    Some(Subsystem::Player) => state.blocks.playbar=Playbar::new(&client).await, 
+                    // Some(Subsystem::Player) => state.blocks.playbar=Playbar::new(&client).await, 
                     Some(Subsystem::Queue) => {println!("queue")},
                     Some(Subsystem::StoredPlaylist) => {},
                     Some(Subsystem::Update) => {}

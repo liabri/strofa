@@ -128,14 +128,14 @@ pub struct Blocks {
 }
 
 impl Blocks {
-    pub async fn new(client: Client) -> Result<Self> {
+    pub async fn new(client: &Client) -> Result<Self> {
         Ok(Self {
             search: Search::default(),
             sort: Sort::new().await,
             library: Library::new().await,
-            playlists: Playlists::new(&client).await?,
-            playbar: Playbar::new(&client).await,
-            main: MainBlock::Queue(Queue::new(&client).await?),
+            playlists: Playlists::new(client).await?,
+            playbar: Playbar::new(client).await,
+            main: MainBlock::Queue(Queue::new(client).await?),
             active: None,
             hovered: Blokka::Library,
             hover_history: VecDeque::new() 
