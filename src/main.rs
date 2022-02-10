@@ -4,8 +4,8 @@
 mod state;
 use state::State;
 
-mod keybindings;
-use keybindings::KeyBindings;
+mod key;
+use key::KeyBindings;
 
 mod block;
 use block::{ Blokka, Playbar };

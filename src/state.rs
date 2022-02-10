@@ -3,7 +3,7 @@ use crate::chunk::Chunks;
 use crate::event::Key;
 use crate::theme::Theme;
 use crate::client::StrofaClient;
-use crate::keybindings::KeyBindings;
+use crate::key::KeyBindings;
 
 use tui::backend::Backend;
 use anyhow::Result;
