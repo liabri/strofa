@@ -53,7 +53,7 @@ impl Default for KeyBindings {
 }
 
 impl KeyBindings {
-    pub async fn execute<B>(state: &mut State<B>, cmd: &str) -> Result<()> where B: 'static + Backend + Send {
+    pub async fn event<B>(state: &mut State<B>, cmd: &str) -> Result<()> where B: 'static + Backend + Send {
         match cmd {
             // binds manipulating ui
             // "to_queue" => state.blocks.set_main(MainBlock::Queue(Queue::new(&state.client).await?)),

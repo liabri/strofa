@@ -123,7 +123,7 @@ async fn main() -> Result<()> {
                 },
 
                 _ if let Some(cmd) = state.keys.0.clone().get(&key) => {
-                    KeyBindings::execute(&mut state, &cmd.clone()).await?;
+                    KeyBindings::event(&mut state, &cmd.clone()).await?;
                 },
 
                 _ => {
