@@ -112,9 +112,61 @@ use tui::{
 //     }
 // }
 
+use std::collections::VecDeque;
 
 
+pub struct Blocks {    
+    pub search: Search,
+    pub sort: Sort,
+    pub library: Library,
+    pub playlists: Playlists,
+    pub playbar: Playbar,
+    pub main: MainBlock,
+    pub active: Option<Blokka>,
+    pub hovered: Blokka,
+    pub hover_history: VecDeque<Blokka>,
+}
 
+impl Blocks {
+    pub async fn new(client: Client) -> Result<Self> {
+        Ok(Self {
+            search: Search::default(),
+            sort: Sort::new().await,
+            library: Library::new().await,
+            playlists: Playlists::new(&client).await?,
+            playbar: Playbar::new(&client).await,
+            main: MainBlock::Queue(Queue::new(&client).await?),
+            active: None,
+            hovered: Blokka::Library,
+            hover_history: VecDeque::new() 
+        })
+    }
+
+    pub fn is_hovered(&self, blk: Blokka) -> bool {
+        if self.hovered==blk { return true; } false
+    }
+
+    pub fn is_active(&self, blk: Blokka) -> bool {
+        if self.active==Some(blk) { return true; } false
+    } 
+
+    pub fn set_main(&mut self, blk: MainBlock) {
+        self.main = blk;
+        self.set_active(Blokka::Main);
+    }
+
+
+    pub fn set_active(&mut self, blk: Blokka) {
+        self.active = Some(blk);
+        self.hovered = blk;
+    }
+
+    pub fn set_hover(&mut self, blk: &Blokka) {
+        self.hover_history.truncate(5);
+        self.hover_history.push_front(self.hovered.clone());
+        self.hovered = blk.clone();
+    }  
+}
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum Blokka {
