@@ -1,4 +1,3 @@
-use crate::block::Blocks;
 use crate::chunk::Chunks;
 use crate::event::Key;
 use crate::theme::Theme;
@@ -10,25 +9,26 @@ use anyhow::Result;
 use tui::layout::Rect;
 use mpd_client::Client;
 
-pub struct State<B> {
+pub struct State {
     pub chunks: Chunks,
-    pub blocks: Blocks<B>,
+    // pub blocks: Blocks<B>,
     pub size: Rect,
     pub theme: Theme,
     pub keys: KeyBindings,
-    pub client: Client
+    pub client: Client,
     // pub _temp: std::marker::PhantomData<B>,
 }
 
-impl<B: Backend + Send> State<B> {
+impl State {
     pub async fn new(client: Client) -> Result<Self> {
         Ok(Self {
             chunks: Chunks::new(&client).await?,
-            blocks: Blocks::new(&client).await?,
+            // blocks: Blocks::new(&client).await?,
             size: Rect::default(),
             theme: Theme::default(),
             keys: KeyBindings::default(),
             client,
+            // _temp: std::marker::PhantomData,
         })
     }   
 }

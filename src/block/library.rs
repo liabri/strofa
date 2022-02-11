@@ -13,7 +13,8 @@ pub struct Library {
 }
 
 use crate::event::Key;
-use crate::block::{ BlockTrait, BlockKind, IndexedBlock };
+use crate::block::{ BlockTrait, IndexedBlock };
+use crate::chunk::BlockKind;
 use async_trait::async_trait;
 use anyhow::Result;
 
@@ -35,14 +36,14 @@ impl IndexedBlock<Library> {
 }
 
 #[async_trait]
-impl<B: Send + Backend> BlockTrait<B> for IndexedBlock<Library> {
-    async fn active_event(state: &mut State<B>, key: Key) {
+impl BlockTrait for IndexedBlock<Library> {
+    async fn active_event(state: &mut State, key: Key) {
         match key {
             Key::Up => state.chunks.centre.inner.left_chunk.inner.library.index.dec(),
             Key::Down => state.chunks.centre.inner.left_chunk.inner.library.index.inc(),
             // Key::Enter => {
-            //     let index = state.blocks.library.index.inner;
-            //     let main_block = match state.blocks.library.entries[index] {
+            //     let index = state.chunks.library.index.inner;
+            //     let main_block = match state.chunks.library.entries[index] {
             //         "Queue" => MainBlock::Queue(Queue::new(&state.client).await.unwrap()),
             //         "Tracks" => MainBlock::Tracks(Tracks::new(TrackKind::All, &state.client).await.unwrap()),
             //         "Albums" => MainBlock::Albums(Albums::new(AlbumKind::All).await),
@@ -51,27 +52,27 @@ impl<B: Send + Backend> BlockTrait<B> for IndexedBlock<Library> {
             //         _ => panic!("view not found"),
             //     };
 
-            //     state.blocks.set_main(main_block);
+            //     state.chunks.set_main(main_block);
             // }
             _ => {},
         }
     }
 
-    async fn hovered_event(state: &mut State<B>, key: Key) {
+    async fn hovered_event(state: &mut State, key: Key) {
         match key {
-            // Key::Up => state.blocks.set_hover(&BlockKind::Search),
-            Key::Down => state.blocks.set_hover(BlockKind::Playlists),
-            // Key::Right => state.blocks.set_hover(&BlockKind::Main),
+            // Key::Up => state.chunks.set_hover(&BlockKind::Search),
+            Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
+            // Key::Right => state.chunks.set_hover(&BlockKind::Main),
             _ => {},
         }
     }
 }
 
 impl<B: Backend + Send> Render<B> for IndexedBlock<Library> {
-    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
-            state.blocks.is_active(BlockKind::Library),
-            state.blocks.is_hovered(BlockKind::Library)
+            state.chunks.is_active(BlockKind::LeftTop),
+            state.chunks.is_hovered(BlockKind::LeftTop)
         );
 
         let items: Vec<ListItem> = self.inner.entries
