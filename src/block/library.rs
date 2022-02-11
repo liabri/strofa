@@ -35,7 +35,7 @@ impl IndexedBlock<Library> {
 }
 
 #[async_trait]
-impl<B: 'static + Send + Backend> BlockTrait<B> for IndexedBlock<Library> {
+impl<B: Send + Backend> BlockTrait<B> for IndexedBlock<Library> {
     async fn active_event(state: &mut State<B>, key: Key) {
         match key {
             Key::Up => state.blocks.library.index.dec(),
@@ -67,7 +67,7 @@ impl<B: 'static + Send + Backend> BlockTrait<B> for IndexedBlock<Library> {
     }
 }
 
-impl<B: 'static + Backend + Send> Render<B> for IndexedBlock<Library> {
+impl<B: Backend + Send> Render<B> for IndexedBlock<Library> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         let highlight_state = (
             state.blocks.is_active(BlockKind::Library),

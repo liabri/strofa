@@ -31,7 +31,7 @@ use anyhow::Result;
 pub const SMALL_TERMINAL_WIDTH: u16 = 150;
 pub const SMALL_TERMINAL_HEIGHT: u16 = 45;
 
-pub type Element<B> = Box<dyn Render<B>>;
+// pub type Element<B> = Box<dyn Render<B>>;
 pub trait Render<B: Backend>: Send {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect);
 }
