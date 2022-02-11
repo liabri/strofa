@@ -11,7 +11,7 @@ use tui::layout::Rect;
 use mpd_client::Client;
 
 pub struct State<B> {
-    pub chunks: Chunks<B>,
+    pub chunks: Chunks,
     pub blocks: Blocks<B>,
     pub size: Rect,
     pub theme: Theme,
@@ -22,7 +22,7 @@ pub struct State<B> {
 impl<B: 'static + Backend + Send> State<B> {
     pub async fn new(client: Client) -> Result<Self> {
         Ok(Self {
-            chunks: Chunks::<B>::new().await?,
+            chunks: Chunks::new(&client).await?,
             blocks: Blocks::new(&client).await?,
             size: Rect::default(),
             theme: Theme::default(),

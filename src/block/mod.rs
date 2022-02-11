@@ -64,16 +64,6 @@ pub struct Blocks<B> {
     _backend: PhantomData<B>,
 }
 
-#[derive(Copy, Clone, PartialEq)]
-pub enum BlockKind {
-    Search,
-    Sort,
-    Library,
-    Playlists,
-    Playbar,
-    Main
-}
-
 impl<B: 'static + Send + Backend> Blocks<B> {
     pub async fn new(client: &Client) -> Result<Self> {
         Ok(Self {
@@ -216,6 +206,32 @@ impl<B: 'static + Send + Backend> Blocks<B> {
         }
     }   
 }
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum BlockKind {
+    Search,
+    Sort,
+    Library,
+    Playlists,
+    Playbar,
+    Main
+}
+
+// #[derive(Copy, Clone, PartialEq)]
+// pub enum BlockPositions {
+//     TopLeft,
+//     TopRight,
+//     LeftTop,
+//     LeftBottom,
+//     Bottom,
+//     Centre
+// }
+
+// impl BlockPositions {
+//     pub fn event(state: &mut State) {
+        
+//     }
+// }
 
 #[async_trait]
 pub trait BlockTrait<B: Backend> {
