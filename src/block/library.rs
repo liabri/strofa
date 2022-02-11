@@ -39,8 +39,8 @@ impl IndexedBlock<Library> {
 impl BlockTrait for IndexedBlock<Library> {
     async fn active_event(state: &mut State, key: Key) {
         match key {
-            Key::Up => state.chunks.centre.inner.left_chunk.inner.library.index.dec(),
-            Key::Down => state.chunks.centre.inner.left_chunk.inner.library.index.inc(),
+            Key::Up => state.chunks.centre.inner.left_chunk.inner.top.index.dec(),
+            Key::Down => state.chunks.centre.inner.left_chunk.inner.top.index.inc(),
             // Key::Enter => {
             //     let index = state.chunks.library.index.inner;
             //     let main_block = match state.chunks.library.entries[index] {
@@ -58,14 +58,7 @@ impl BlockTrait for IndexedBlock<Library> {
         }
     }
 
-    async fn hovered_event(state: &mut State, key: Key) {
-        match key {
-            // Key::Up => state.chunks.set_hover(&BlockKind::Search),
-            Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
-            // Key::Right => state.chunks.set_hover(&BlockKind::Main),
-            _ => {},
-        }
-    }
+    async fn hovered_event(state: &mut State, key: Key) {}
 }
 
 impl<B: Backend + Send> Render<B> for IndexedBlock<Library> {

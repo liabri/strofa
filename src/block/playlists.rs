@@ -41,13 +41,7 @@ impl BlockTrait for IndexedBlock<Playlists> {
         }  
     }
 
-    async fn hovered_event(state: &mut State, key: Key) {
-        match key {
-            Key::Up => state.chunks.set_hover(BlockKind::LeftTop),
-            // Key::Right => state.chunks.set_hover(&BlockKind::Main),
-            _ => {}
-        }
-    }
+    async fn hovered_event(state: &mut State, key: Key) {}
 }
 
 impl<B: Backend + Send> Render<B> for IndexedBlock<Playlists> {

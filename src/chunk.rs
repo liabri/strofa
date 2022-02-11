@@ -83,7 +83,72 @@ impl Chunks {
 
     pub async fn hovered_event(state: &mut State, key: Key) {
         match state.chunks.hovered {
-            BlockKind::LeftTop => IndexedBlock::<Library>::hovered_event(state, key).await,
+            BlockKind::TopLeft => {
+                match key {
+                    Key::Up => state.chunks.set_hover(BlockKind::TopLeft),
+                    Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
+                    Key::Right => state.chunks.set_hover(BlockKind::Centre),
+                    _ => {},
+                }
+
+                IndexedBlock::<Library>::hovered_event(state, key).await;
+            }
+
+            BlockKind::LeftTop => {
+                match key {
+                    Key::Up => state.chunks.set_hover(BlockKind::TopLeft),
+                    Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
+                    Key::Right => state.chunks.set_hover(BlockKind::Centre),
+                    _ => {},
+                }
+
+                IndexedBlock::<Library>::hovered_event(state, key).await;
+            }
+
+            BlockKind::LeftTop => {
+                match key {
+                    Key::Up => state.chunks.set_hover(BlockKind::TopLeft),
+                    Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
+                    Key::Right => state.chunks.set_hover(BlockKind::Centre),
+                    _ => {},
+                }
+
+                IndexedBlock::<Library>::hovered_event(state, key).await;
+            }
+
+            BlockKind::LeftTop => {
+                match key {
+                    Key::Up => state.chunks.set_hover(BlockKind::TopLeft),
+                    Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
+                    Key::Right => state.chunks.set_hover(BlockKind::Centre),
+                    _ => {},
+                }
+
+                IndexedBlock::<Library>::hovered_event(state, key).await;
+            }
+
+            BlockKind::LeftTop => {
+                match key {
+                    Key::Up => state.chunks.set_hover(BlockKind::TopLeft),
+                    Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
+                    Key::Right => state.chunks.set_hover(BlockKind::Centre),
+                    _ => {},
+                }
+
+                IndexedBlock::<Library>::hovered_event(state, key).await;
+            }
+
+            BlockKind::LeftTop => {
+                match key {
+                    Key::Up => state.chunks.set_hover(BlockKind::TopLeft),
+                    Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
+                    Key::Right => state.chunks.set_hover(BlockKind::Centre),
+                    _ => {},
+                }
+
+                IndexedBlock::<Library>::hovered_event(state, key).await;
+            }
+
             BlockKind::LeftBottom => IndexedBlock::<Playlists>::hovered_event(state, key).await,
             _ => {}
         }
@@ -107,8 +172,8 @@ pub struct Top {
 }
 
 pub struct Left {
-    pub library: IndexedBlock<Library>,
-    pub playlists: IndexedBlock<Playlists>
+    pub top: IndexedBlock<Library>,
+    pub bottom: IndexedBlock<Playlists>
 }
 
 pub struct Centre {
@@ -152,8 +217,8 @@ impl Chunk<Left> {
         Ok(Self {
             show: true,
             inner: Left {
-                library: IndexedBlock::<Library>::new().await?,
-                playlists: IndexedBlock::<Playlists>::new(client).await?
+                top: IndexedBlock::<Library>::new().await?,
+                bottom: IndexedBlock::<Playlists>::new(client).await?
             }
         })
     }
@@ -171,8 +236,8 @@ impl<B: Backend + Send> Render<B> for Chunk<Left> {
                 .split(layout_chunk);
 
 
-            self.inner.library.render(f, state, chunks[0]);
-            self.inner.playlists.render(f, state, chunks[1]);
+            self.inner.top.render(f, state, chunks[0]);
+            self.inner.bottom.render(f, state, chunks[1]);
         }
     }
 }
