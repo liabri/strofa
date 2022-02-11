@@ -85,13 +85,22 @@ impl Chunks {
         match state.chunks.hovered {
             BlockKind::TopLeft => {
                 match key {
-                    Key::Up => state.chunks.set_hover(BlockKind::TopLeft),
-                    Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
-                    Key::Right => state.chunks.set_hover(BlockKind::Centre),
+                    Key::Down => state.chunks.set_hover(BlockKind::LeftTop),
+                    Key::Right => state.chunks.set_hover(BlockKind::TopRight),
                     _ => {},
                 }
 
-                IndexedBlock::<Library>::hovered_event(state, key).await;
+                // IndexedBlock::<Search>::hovered_event(state, key).await;
+            }
+
+            BlockKind::TopRight => {
+                match key {
+                    Key::Down => state.chunks.set_hover(BlockKind::Centre),
+                    Key::Left => state.chunks.set_hover(BlockKind::TopLeft),
+                    _ => {},
+                }
+
+                // IndexedBlock::<Sort>::hovered_event(state, key).await;
             }
 
             BlockKind::LeftTop => {
@@ -105,7 +114,7 @@ impl Chunks {
                 IndexedBlock::<Library>::hovered_event(state, key).await;
             }
 
-            BlockKind::LeftTop => {
+            BlockKind::LeftBottom => {
                 match key {
                     Key::Up => state.chunks.set_hover(BlockKind::TopLeft),
                     Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
@@ -113,50 +122,42 @@ impl Chunks {
                     _ => {},
                 }
 
-                IndexedBlock::<Library>::hovered_event(state, key).await;
+                IndexedBlock::<Playlists>::hovered_event(state, key).await;
             }
 
-            BlockKind::LeftTop => {
+            BlockKind::Centre => {
                 match key {
                     Key::Up => state.chunks.set_hover(BlockKind::TopLeft),
-                    Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
-                    Key::Right => state.chunks.set_hover(BlockKind::Centre),
+                    Key::Left => {
+                        for previous in &state.chunks.hover_history {
+                            if *previous==BlockKind::LeftTop || *previous==BlockKind::LeftBottom {
+                                state.chunks.set_hover(*previous);
+                                return;
+                            }
+                        }
+
+                        state.chunks.set_hover(BlockKind::LeftTop)
+                    },
+
+                    Key::Right => state.chunks.set_hover(BlockKind::TopRight),
+                    Key::Down => {
+                        state.chunks.set_active(BlockKind::Centre);
+                    },
+
                     _ => {},
                 }
 
-                IndexedBlock::<Library>::hovered_event(state, key).await;
+                // IndexedBlock::<dyn Main>::hovered_event(state, key).await;
+                // state.chunks.main.index().inc();
             }
 
-            BlockKind::LeftTop => {
-                match key {
-                    Key::Up => state.chunks.set_hover(BlockKind::TopLeft),
-                    Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
-                    Key::Right => state.chunks.set_hover(BlockKind::Centre),
-                    _ => {},
-                }
-
-                IndexedBlock::<Library>::hovered_event(state, key).await;
-            }
-
-            BlockKind::LeftTop => {
-                match key {
-                    Key::Up => state.chunks.set_hover(BlockKind::TopLeft),
-                    Key::Down => state.chunks.set_hover(BlockKind::LeftBottom),
-                    Key::Right => state.chunks.set_hover(BlockKind::Centre),
-                    _ => {},
-                }
-
-                IndexedBlock::<Library>::hovered_event(state, key).await;
-            }
-
-            BlockKind::LeftBottom => IndexedBlock::<Playlists>::hovered_event(state, key).await,
             _ => {}
         }
 
         // MOVE TO MAIN some nice fluidity
-        // if let Some(Blokka::Main) = state.blocks.active {
-        //     let blk = state.blocks.hover_previous(1).clone();
-        //     state.blocks.set_hover(&blk);
+        // if let Some(Blokka::Main) = state.chunks.active {
+        //     let blk = state.chunks.hover_previous(1).clone();
+        //     state.chunks.set_hover(&blk);
         // }
 
         // common behaviour
@@ -206,8 +207,8 @@ impl<B: Backend + Send> Render<B> for Chunk<Top> {
                 .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
                 .split(layout_chunk);
 
-            // state.blocks.search.render(f, state, chunks[0]);
-            // state.blocks.sort.render(f, state, chunks[1]);
+            // state.chunks.search.render(f, state, chunks[0]);
+            // state.chunks.sort.render(f, state, chunks[1]);
         }
     }
 }
@@ -263,7 +264,7 @@ impl<B: Backend + Send> Render<B> for Chunk<Centre> {
                 .split(layout_chunk);
 
             self.inner.left_chunk.render(f, state, chunks[0]);
-            // state.blocks.main.render(f, state, chunks[1]);
+            // state.chunks.main.render(f, state, chunks[1]);
         }
     }
 }
@@ -285,7 +286,7 @@ impl<B: Backend + Send> Render<B> for Chunk<Bottom> {
                 .constraints([Constraint::Percentage(100)].as_ref())
                 .split(layout_chunk);
 
-            // state.blocks.playbar.render(f, state, chunks[0]);
+            // state.chunks.playbar.render(f, state, chunks[0]);
         }
     }
 }
