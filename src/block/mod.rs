@@ -53,8 +53,8 @@ use tui::{
 pub struct Blocks<B> {    
     // pub search: StandardBlock<Search>,
     // pub sort: IndexedBlock<Sort>,
-    pub library: IndexedBlock<Library>,
-    pub playlists: IndexedBlock<Playlists>,
+    // pub library: IndexedBlock<Library>,
+    // pub playlists: IndexedBlock<Playlists>,
     // pub main_block: Box<dyn BlockTrait>,
     // pub playbar: StandardBlock<Playbar>,
     // pub popup_block: Option<BlokkaK<dyn Popup>>, 
@@ -69,8 +69,8 @@ impl<B: Send + Backend> Blocks<B> {
         Ok(Self {
             // search: Search::default(),
             // sort: Sort::new().await,
-            library: IndexedBlock::<Library>::new().await?,
-            playlists: IndexedBlock::<Playlists>::new(client).await?,
+            // library: IndexedBlock::<Library>::new().await?,
+            // playlists: IndexedBlock::<Playlists>::new(client).await?,
             // playbar: Playbar::new(client).await,
             // main: MainBlock::Queue(Queue::new(client).await?),
             active: None,
@@ -80,13 +80,13 @@ impl<B: Send + Backend> Blocks<B> {
         })
     }
 
-    pub fn get_block_mut(&mut self, kind: BlockKind) -> &mut dyn BlockTrait<B> {
-        match kind {
-            BlockKind::Library => &mut self.library as &mut dyn BlockTrait<B>,
-            BlockKind::Playlists => &mut self.playlists as &mut dyn BlockTrait<B>,
-            _ => todo!()
-        }
-    }
+    // pub fn get_block_mut(&mut self, kind: BlockKind) -> &mut dyn BlockTrait<B> {
+    //     match kind {
+    //         BlockKind::Library => &mut self.library as &mut dyn BlockTrait<B>,
+    //         BlockKind::Playlists => &mut self.playlists as &mut dyn BlockTrait<B>,
+    //         _ => todo!()
+    //     }
+    // }
 
     pub fn is_hovered(&self, blk: BlockKind) -> bool {
         if self.hovered==blk { return true; } false
@@ -96,13 +96,13 @@ impl<B: Send + Backend> Blocks<B> {
         if self.active==Some(blk) { return true; } false
     } 
 
-    pub fn active_block(&mut self) -> Option<&mut dyn BlockTrait<B>> {
-        Some(self.get_block_mut(self.active?))
-    }
+    // pub fn active_block(&mut self) -> Option<&mut dyn BlockTrait<B>> {
+    //     Some(self.get_block_mut(self.active?))
+    // }
 
-    pub fn hovered_block(&mut self) -> &mut dyn BlockTrait<B> {
-        self.get_block_mut(self.hovered)
-    }
+    // pub fn hovered_block(&mut self) -> &mut dyn BlockTrait<B> {
+    //     self.get_block_mut(self.hovered)
+    // }
 
     // pub pub fn set_main(&mut self, blk: MainBlock) {
     //     self.main = blk;
@@ -236,7 +236,7 @@ pub enum BlockKind {
 #[async_trait]
 pub trait BlockTrait<B: Backend> {
     async fn active_event(state: &mut State<B>, key: Key) where Self: Sized;
-    async fn hovered_event(state: &mut State<B>, key: Key) where Self: Sized;
+    async fn hovered_event(state: &mut State<B>, key: Key) where Self: Sized;// allow to do stuff on the active event, eg. main go down in index if down pressed while hovered
 }
 
 pub struct StandardBlock<T> {

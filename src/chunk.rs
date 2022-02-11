@@ -7,19 +7,44 @@ use crate::state::State;
 use crate::Render;
 use anyhow::Result;
 use mpd_client::Client;
+use std::collections::VecDeque;
+
+//move hover events to chunks/blocks
 
 pub struct Chunks {
     pub top: Chunk<Top>,
     pub centre: Chunk<Centre>,
-    pub bottom: Chunk<Bottom>
+    pub bottom: Chunk<Bottom>,
+    pub active_block: Option<BlockPositions>,
+    pub hovered_block: BlockPositions,
+    pub hover_history: VecDeque<BlockPositions>,
+}
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum BlockPositions {
+    TopLeft,
+    TopRight,
+    LeftTop,
+    LeftBottom,
+    Bottom,
+    Centre
+}
+
+impl BlockPositions {
+    pub fn event<B>(&self, state: &mut State<B>) where B: Backend + Send {
+        
+    }
 }
 
 impl Chunks {
     pub async fn new(client: &Client) -> Result<Self> {
-        Ok(Self{
+        Ok(Self {
             top: Chunk::<Top>::new().await?,
             centre: Chunk::<Centre>::new(client).await?,
             bottom: Chunk::<Bottom>::new().await?,
+            active_block: None,
+            hovered_block: BlockPositions::LeftTop,
+            hover_history: VecDeque::new()
         })
     }
 }
@@ -42,8 +67,8 @@ pub struct Bottom {
 }
 
 pub struct Chunk<T> {
-    show: bool,
-    inner: T,
+    pub show: bool,
+    pub inner: T,
 }
 
 impl Chunk<Top> {
