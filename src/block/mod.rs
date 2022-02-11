@@ -50,7 +50,7 @@ use tui::{
     Frame,
 };
 
-pub struct Blocks<B> {    
+// pub struct Blocks<B> {    
     // pub search: StandardBlock<Search>,
     // pub sort: IndexedBlock<Sort>,
     // pub library: IndexedBlock<Library>,
@@ -58,43 +58,43 @@ pub struct Blocks<B> {
     // pub main_block: Box<dyn BlockTrait>,
     // pub playbar: StandardBlock<Playbar>,
     // pub popup_block: Option<BlokkaK<dyn Popup>>, 
-    pub active: Option<BlockKind>,
-    pub hovered: BlockKind,
-    pub hover_history: VecDeque<BlockKind>,
-    _backend: PhantomData<B>,
-}
+//     pub active: Option<BlockKind>,
+//     pub hovered: BlockKind,
+//     pub hover_history: VecDeque<BlockKind>,
+//     _backend: PhantomData<B>,
+// }
 
-impl<B: Send + Backend> Blocks<B> {
-    pub async fn new(client: &Client) -> Result<Self> {
-        Ok(Self {
-            // search: Search::default(),
-            // sort: Sort::new().await,
-            // library: IndexedBlock::<Library>::new().await?,
-            // playlists: IndexedBlock::<Playlists>::new(client).await?,
-            // playbar: Playbar::new(client).await,
-            // main: MainBlock::Queue(Queue::new(client).await?),
-            active: None,
-            hovered: BlockKind::Library,
-            hover_history: VecDeque::new(),
-            _backend: PhantomData,
-        })
-    }
+// impl<B: Send + Backend> Blocks<B> {
+//     pub async fn new(client: &Client) -> Result<Self> {
+//         Ok(Self {
+//             // search: Search::default(),
+//             // sort: Sort::new().await,
+//             // library: IndexedBlock::<Library>::new().await?,
+//             // playlists: IndexedBlock::<Playlists>::new(client).await?,
+//             // playbar: Playbar::new(client).await,
+//             // main: MainBlock::Queue(Queue::new(client).await?),
+//             active: None,
+//             hovered: BlockKind::LeftTop,
+//             hover_history: VecDeque::new(),
+//             _backend: PhantomData,
+//         })
+//     }
 
     // pub fn get_block_mut(&mut self, kind: BlockKind) -> &mut dyn BlockTrait<B> {
     //     match kind {
-    //         BlockKind::Library => &mut self.library as &mut dyn BlockTrait<B>,
+    //         BlockKind::LeftTop => &mut self.library as &mut dyn BlockTrait<B>,
     //         BlockKind::Playlists => &mut self.playlists as &mut dyn BlockTrait<B>,
     //         _ => todo!()
     //     }
     // }
 
-    pub fn is_hovered(&self, blk: BlockKind) -> bool {
-        if self.hovered==blk { return true; } false
-    }
+    // pub fn is_hovered(&self, blk: BlockKind) -> bool {
+    //     if self.hovered==blk { return true; } false
+    // }
 
-    pub fn is_active(&self, blk: BlockKind) -> bool {
-        if self.active==Some(blk) { return true; } false
-    } 
+    // pub fn is_active(&self, blk: BlockKind) -> bool {
+    //     if self.active==Some(blk) { return true; } false
+    // } 
 
     // pub fn active_block(&mut self) -> Option<&mut dyn BlockTrait<B>> {
     //     Some(self.get_block_mut(self.active?))
@@ -109,23 +109,23 @@ impl<B: Send + Backend> Blocks<B> {
     //     self.set_active(Blokka::Main);
     // }
 
-    pub fn set_active(&mut self, blk: BlockKind) {
-        self.active = Some(blk);
-        self.hovered = blk;
-    }
+    // pub fn set_active(&mut self, blk: BlockKind) {
+    //     self.active = Some(blk);
+    //     self.hovered = blk;
+    // }
 
-    pub fn set_hover(&mut self, blk: BlockKind) {
-        self.hover_history.truncate(5);
-        self.hover_history.push_front(self.hovered.clone());
-        self.hovered = blk.clone();
-    } 
+    // pub fn set_hover(&mut self, blk: BlockKind) {
+    //     self.hover_history.truncate(5);
+    //     self.hover_history.push_front(self.hovered.clone());
+    //     self.hovered = blk.clone();
+    // } 
 
-    pub async fn active_event(state: &mut State<B>, key: Key) {
-        match state.blocks.active {
-            // Some(BlockKind::Search) => Search::active_key_event(self, key).await,
-            // Some(BlockKind::Sort) => Sort::active_key_event(self, key).await,
-            Some(BlockKind::Library) => IndexedBlock::<Library>::active_event(state, key).await,
-            Some(BlockKind::Playlists) => IndexedBlock::<Playlists>::active_event(state, key).await,
+    // pub async fn active_event(state: &mut State, key: Key) {
+    //     match state.blocks.active {
+    //         // Some(BlockKind::Search) => Search::active_key_event(self, key).await,
+    //         // Some(BlockKind::Sort) => Sort::active_key_event(self, key).await,
+    //         Some(BlockKind::LeftTop) => IndexedBlock::<Library>::active_event(state, key).await,
+    //         Some(BlockKind::Playlists) => IndexedBlock::<Playlists>::active_event(state, key).await,
 
         //     Some(BlockKind::Main) => { 
         //         match key {
@@ -161,29 +161,29 @@ impl<B: Send + Backend> Blocks<B> {
         //         }
         //     },
 
-            _ => {}
-        }
-    }
+    //         _ => {}
+    //     }
+    // }
 
-    pub async fn hovered_event(state: &mut State<B>, key: Key) {
-        match state.blocks.hovered {
-            // BlockKind::Search => Search::hovered_key_event(self, key).await,
-            // BlockKind::Sort => Sort::hovered_key_event(self, key).await,
-            BlockKind::Library => IndexedBlock::<Library>::hovered_event(state, key).await,
-            BlockKind::Playlists => IndexedBlock::<Playlists>::hovered_event(state, key).await,
+    // pub async fn hovered_event(state: &mut State, key: Key) {
+    //     match state.blocks.hovered {
+    //         // BlockKind::Search => Search::hovered_key_event(self, key).await,
+    //         // BlockKind::Sort => Sort::hovered_key_event(self, key).await,
+    //         BlockKind::LeftTop => IndexedBlock::<Library>::hovered_event(state, key).await,
+    //         BlockKind::Playlists => IndexedBlock::<Playlists>::hovered_event(state, key).await,
 
             // BlockKind::Main => {
             //     match key {
             //         Key::Up => self.blocks.set_hover(&BlockKind::Search),
             //         Key::Left => {
             //             for previous in self.blocks.hover_history.clone().into_iter() {
-            //                 if previous==BlockKind::Library || previous==BlockKind::Playlists {
+            //                 if previous==BlockKind::LeftTop || previous==BlockKind::Playlists {
             //                     self.blocks.set_hover(&previous);
             //                     return;
             //                 }
             //             }
 
-            //             self.blocks.set_hover(&BlockKind::Library)
+            //             self.blocks.set_hover(&BlockKind::LeftTop)
             //         },
 
             //         Key::Right => self.blocks.set_hover(&BlockKind::Sort),
@@ -196,26 +196,26 @@ impl<B: Send + Backend> Blocks<B> {
             //     }
             // },
 
-            _ => {}   
-        }
+    //         _ => {}   
+    //     }
 
-        // common behaviour
-        match key {
-            Key::Enter => state.blocks.set_active(state.blocks.hovered),
-            _ => {}
-        }
-    }   
-}
+    //     // common behaviour
+    //     match key {
+    //         Key::Enter => state.blocks.set_active(state.blocks.hovered),
+    //         _ => {}
+    //     }
+    // }   
+// }
 
-#[derive(Copy, Clone, PartialEq)]
-pub enum BlockKind {
-    Search,
-    Sort,
-    Library,
-    Playlists,
-    Playbar,
-    Main
-}
+// #[derive(Copy, Clone, PartialEq)]
+// pub enum BlockKind {
+//     Search,
+//     Sort,
+//     Library,
+//     Playlists,
+//     Playbar,
+//     Main
+// }
 
 // #[derive(Copy, Clone, PartialEq)]
 // pub enum BlockPositions {
@@ -234,9 +234,9 @@ pub enum BlockKind {
 // }
 
 #[async_trait]
-pub trait BlockTrait<B: Backend> {
-    async fn active_event(state: &mut State<B>, key: Key) where Self: Sized;
-    async fn hovered_event(state: &mut State<B>, key: Key) where Self: Sized;// allow to do stuff on the active event, eg. main go down in index if down pressed while hovered
+pub trait BlockTrait{
+    async fn active_event(state: &mut State, key: Key) where Self: Sized;
+    async fn hovered_event(state: &mut State, key: Key) where Self: Sized;// allow to do stuff on the active event, eg. main go down in index if down pressed while hovered
 }
 
 pub struct StandardBlock<T> {
@@ -262,7 +262,7 @@ pub struct IndexedBlock<T> {
 // }
 
 // impl<B: Backend> Render<B> for MainBlock {
-//     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
+//     fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
 //         match self {
 //             MainBlock::SearchResults(x) => x.render(f, state, layout_chunk),
 //             MainBlock::Artists(x) => x.render(f, state, layout_chunk),
@@ -314,7 +314,7 @@ impl Index {
     }
 }
 
-fn selectable_list<B>(f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect, title: &str, items: Vec<ListItem>, highlight_state: (bool, bool), selected_index: Option<usize>) where B: Backend {
+fn selectable_list<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title: &str, items: Vec<ListItem>, highlight_state: (bool, bool), selected_index: Option<usize>) where B: Backend {
     let mut list_state = ListState::default();
     list_state.select(selected_index);
 
@@ -331,7 +331,7 @@ pub struct TableHeaderItem<'a> {
     width: u16
 }
 
-fn selectable_table<B>(f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect, title: &str, header: &[TableHeaderItem], items: Vec<Vec<String>>, selected_index: usize, highlight_state: (bool, bool)) 
+fn selectable_table<B>(f: &mut Frame<B>, state: &State, layout_chunk: Rect, title: &str, header: &[TableHeaderItem], items: Vec<Vec<String>>, selected_index: usize, highlight_state: (bool, bool)) 
 where B: Backend {
     let widths = header
         .iter()

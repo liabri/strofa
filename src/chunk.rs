@@ -8,6 +8,7 @@ use crate::Render;
 use anyhow::Result;
 use mpd_client::Client;
 use std::collections::VecDeque;
+use crate::event::Key;
 
 //move hover events to chunks/blocks
 
@@ -15,13 +16,13 @@ pub struct Chunks {
     pub top: Chunk<Top>,
     pub centre: Chunk<Centre>,
     pub bottom: Chunk<Bottom>,
-    pub active_block: Option<BlockPositions>,
-    pub hovered_block: BlockPositions,
-    pub hover_history: VecDeque<BlockPositions>,
+    pub active: Option<BlockKind>,
+    pub hovered: BlockKind,
+    pub hover_history: VecDeque<BlockKind>,
 }
 
 #[derive(Copy, Clone, PartialEq)]
-pub enum BlockPositions {
+pub enum BlockKind {
     TopLeft,
     TopRight,
     LeftTop,
@@ -30,8 +31,8 @@ pub enum BlockPositions {
     Centre
 }
 
-impl BlockPositions {
-    pub fn event<B>(&self, state: &mut State<B>) where B: Backend + Send {
+impl BlockKind {
+    pub fn event<B>(&self, state: &mut State) where B: Backend + Send {
         
     }
 }
@@ -42,11 +43,63 @@ impl Chunks {
             top: Chunk::<Top>::new().await?,
             centre: Chunk::<Centre>::new(client).await?,
             bottom: Chunk::<Bottom>::new().await?,
-            active_block: None,
-            hovered_block: BlockPositions::LeftTop,
+            active: None,
+            hovered: BlockKind::LeftTop,
             hover_history: VecDeque::new()
         })
     }
+
+    pub fn set_active(&mut self, blk: BlockKind) {
+        self.active = Some(blk);
+        self.hovered = blk;
+    }
+
+    pub fn set_hover(&mut self, blk: BlockKind) {
+        self.hover_history.truncate(5);
+        self.hover_history.push_front(self.hovered.clone());
+        self.hovered = blk.clone();
+    }
+
+    pub fn is_hovered(&self, blk: BlockKind) -> bool {
+        if self.hovered==blk { return true; } false
+    }
+
+    pub fn is_active(&self, blk: BlockKind) -> bool {
+        if self.active==Some(blk) { return true; } false
+    } 
+
+    pub async fn active_event(state: &mut State, key: Key) {
+        match state.chunks.active {
+            Some(BlockKind::LeftTop) => IndexedBlock::<Library>::active_event(state, key).await,
+            Some(BlockKind::LeftBottom) => IndexedBlock::<Playlists>::active_event(state, key).await,
+            _ => {}
+        }
+
+        match key {
+            Key::Esc => state.chunks.active=None,
+            _ => {}
+        }
+    }
+
+    pub async fn hovered_event(state: &mut State, key: Key) {
+        match state.chunks.hovered {
+            BlockKind::LeftTop => IndexedBlock::<Library>::hovered_event(state, key).await,
+            BlockKind::LeftBottom => IndexedBlock::<Playlists>::hovered_event(state, key).await,
+            _ => {}
+        }
+
+        // MOVE TO MAIN some nice fluidity
+        // if let Some(Blokka::Main) = state.blocks.active {
+        //     let blk = state.blocks.hover_previous(1).clone();
+        //     state.blocks.set_hover(&blk);
+        // }
+
+        // common behaviour
+        match key {
+            Key::Enter => state.chunks.set_active(state.chunks.hovered),
+            _ => {}
+        }
+    }   
 }
 
 pub struct Top {
@@ -81,7 +134,7 @@ impl Chunk<Top> {
 }
 
 impl<B: Backend + Send> Render<B> for Chunk<Top> {
-    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
                 .direction(Direction::Horizontal)
@@ -107,7 +160,7 @@ impl Chunk<Left> {
 }
 
 impl<B: Backend + Send> Render<B> for Chunk<Left> {
-    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
@@ -137,7 +190,7 @@ impl Chunk<Centre> {
 
 
 impl<B: Backend + Send> Render<B> for Chunk<Centre> {
-    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
                 .direction(Direction::Horizontal)
@@ -160,7 +213,7 @@ impl Chunk<Bottom> {
 }
 
 impl<B: Backend + Send> Render<B> for Chunk<Bottom> {
-    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
                 .direction(Direction::Horizontal)

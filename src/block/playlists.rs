@@ -1,8 +1,9 @@
-use super::{ IndexedBlock, BlockTrait, BlockKind, State, Render, Index, get_color, selectable_list };
+use super::{ IndexedBlock, BlockTrait, State, Render, Index, get_color, selectable_list };
 use mpd_client::{ Client, commands, commands::responses::Playlist };
 use crate::event::Key;
 use async_trait::async_trait;
 use anyhow::Result;
+use crate::chunk::BlockKind;
 use tui::{ 
     Frame,
     backend::Backend, 
@@ -25,35 +26,35 @@ impl IndexedBlock<Playlists> {
 }
 
 #[async_trait]
-impl<B: Backend + Send> BlockTrait<B> for IndexedBlock<Playlists> {
-    async fn active_event(state: &mut State<B>, key: Key) {
+impl BlockTrait for IndexedBlock<Playlists> {
+    async fn active_event(state: &mut State, key: Key) {
         match key {
-            // Key::Up => state.blocks.playlists.index.dec(),
-            // Key::Down => state.blocks.playlists.index.inc(),   
+            // Key::Up => state.chunks.playlists.index.dec(),
+            // Key::Down => state.chunks.playlists.index.inc(),   
             // Key::Enter => {
-            //     let index = state.blocks.playlists.index.inner;  
-            //     let name = state.blocks.playlists.entries.get(0).unwrap().name.to_string();
-            //     state.blocks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Playlist(name), &state.client).await.unwrap()));
+            //     let index = state.chunks.playlists.index.inner;  
+            //     let name = state.chunks.playlists.entries.get(0).unwrap().name.to_string();
+            //     state.chunks.set_main(MainBlock::Tracks(Tracks::new(TrackKind::Playlist(name), &state.client).await.unwrap()));
             // },
 
             _ => {}
         }  
     }
 
-    async fn hovered_event(state: &mut State<B>, key: Key) {
+    async fn hovered_event(state: &mut State, key: Key) {
         match key {
-            Key::Up => state.blocks.set_hover(BlockKind::Library),
-            // Key::Right => state.blocks.set_hover(&BlockKind::Main),
+            Key::Up => state.chunks.set_hover(BlockKind::LeftTop),
+            // Key::Right => state.chunks.set_hover(&BlockKind::Main),
             _ => {}
         }
     }
 }
 
 impl<B: Backend + Send> Render<B> for IndexedBlock<Playlists> {
-    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect) {
         let highlight_state = (
-            state.blocks.is_active(BlockKind::Playlists),
-            state.blocks.is_hovered(BlockKind::Playlists)
+            state.chunks.is_active(BlockKind::LeftBottom),
+            state.chunks.is_hovered(BlockKind::LeftBottom)
         );
 
         let items: Vec<ListItem> = self.inner.entries

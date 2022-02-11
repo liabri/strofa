@@ -9,9 +9,10 @@ mod key;
 use key::KeyBindings;
 
 mod block;
-use block::{ Blocks, BlockKind, /*Playbar*/ };
 
 mod chunk;
+use chunk::{ Chunks };
+
 mod event;
 mod theme;
 mod client;
@@ -33,7 +34,7 @@ pub const SMALL_TERMINAL_HEIGHT: u16 = 45;
 
 // pub type Element<B> = Box<dyn Render<B>>;
 pub trait Render<B: Backend>: Send {
-    fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect);
+    fn render(&self, f: &mut Frame<B>, state: &State, layout_chunk: Rect);
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -102,35 +103,25 @@ async fn main() -> Result<()> {
 
         // backend events
         if let Some(event::Event::Input(key)) = events.next().await {
-            if state.blocks.active==Some(BlockKind::Search) {
-                if let event::Key::Char(_) = key {
-                    Blocks::active_event(&mut state, key).await;
-                    continue;
-                };
-            }
+            // if state.blocks.active==Some(BlockKind::Search) {
+            //     if let event::Key::Char(_) = key {
+            //         Chunks::active_event(&mut state, key).await;
+            //         continue;
+            //     };
+            // }
 
             match key {
                 event::Key::Ctrl('c') => break,
-                event::Key::Esc => {
-
-                    // some nice fluidity
-                    // if let Some(Blokka::Main) = state.blocks.active {
-                    //     let blk = state.blocks.hover_previous(1).clone();
-                    //     state.blocks.set_hover(&blk);
-                    // }
-
-                    state.blocks.active=None
-                },
 
                 _ if let Some(cmd) = state.keys.0.clone().get(&key) => {
                     KeyBindings::event(&mut state, &cmd.clone()).await?;
                 },
 
                 _ => {
-                    if let None = state.blocks.active {
-                        Blocks::hovered_event(&mut state, key).await;
+                    if let None = state.chunks.active {
+                        Chunks::hovered_event(&mut state, key).await;
                     } else {
-                        Blocks::active_event(&mut state, key).await; 
+                        Chunks::active_event(&mut state, key).await; 
                     }
                 }
             }
