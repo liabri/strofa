@@ -29,7 +29,7 @@ pub use playlists::Playlists;
 // mod artists;
 // pub use artists::Artists;
 
-use crate::{ Element, Render }; 
+use crate::Render; 
 use crate::state::State;
 use crate::theme::get_color;
 use crate::event::Key;
@@ -64,7 +64,7 @@ pub struct Blocks<B> {
     _backend: PhantomData<B>,
 }
 
-impl<B: 'static + Send + Backend> Blocks<B> {
+impl<B: Send + Backend> Blocks<B> {
     pub async fn new(client: &Client) -> Result<Self> {
         Ok(Self {
             // search: Search::default(),

@@ -17,9 +17,10 @@ pub struct State<B> {
     pub theme: Theme,
     pub keys: KeyBindings,
     pub client: Client
+    // pub _temp: std::marker::PhantomData<B>,
 }
 
-impl<B: 'static + Backend + Send> State<B> {
+impl<B: Backend + Send> State<B> {
     pub async fn new(client: Client) -> Result<Self> {
         Ok(Self {
             chunks: Chunks::new(&client).await?,

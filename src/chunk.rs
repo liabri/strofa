@@ -5,7 +5,6 @@ use tui::backend::Backend;
 use tui::Frame;
 use crate::state::State;
 use crate::Render;
-use crate::Element;
 use anyhow::Result;
 use mpd_client::Client;
 
@@ -82,7 +81,7 @@ impl Chunk<Left> {
     }
 }
 
-impl<B: 'static + Backend + Send> Render<B> for Chunk<Left> {
+impl<B: Backend + Send> Render<B> for Chunk<Left> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
@@ -112,7 +111,7 @@ impl Chunk<Centre> {
 }
 
 
-impl<B: 'static + Backend + Send> Render<B> for Chunk<Centre> {
+impl<B: Backend + Send> Render<B> for Chunk<Centre> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
