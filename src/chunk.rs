@@ -1,59 +1,62 @@
 use std::marker::PhantomData;
 use tui::layout::{ Direction, Layout, Constraint, Rect };
+use crate::block::{ IndexedBlock, BlockTrait, Library, Playlists };
 use tui::backend::Backend;
 use tui::Frame;
 use crate::state::State;
 use crate::Render;
 use crate::Element;
 use anyhow::Result;
+use mpd_client::Client;
 
-pub struct Top;
-pub struct Left;
-pub struct Centre;
-pub struct Bottom;
-
-pub struct Chunks<B> {
-    pub top: Chunk<B, Top>,
-    pub centre: Chunk<B, Centre>,
-    pub bottom: Chunk<B, Bottom>,
+pub struct Chunks {
+    pub top: Chunk<Top>,
+    pub centre: Chunk<Centre>,
+    pub bottom: Chunk<Bottom>
 }
 
-impl<B: 'static + Backend + Send> Chunks<B> {
-    pub async fn new() -> Result<Self> {
-        let mut centre_elements = Vec::new();
-        centre_elements.push(Box::new(Chunk::<B, Left>::new(Vec::new())?) as Element<B>);
-
+impl Chunks {
+    pub async fn new(client: &Client) -> Result<Self> {
         Ok(Self{
-            top: Chunk::<B, Top>::new(Vec::new())?,
-            centre: Chunk::<B, Centre>::new(centre_elements)?,
-            bottom: Chunk::<B, Bottom>::new(Vec::new())?,
+            top: Chunk::<Top>::new().await?,
+            centre: Chunk::<Centre>::new(client).await?,
+            bottom: Chunk::<Bottom>::new().await?,
         })
     }
 }
 
-pub struct Chunk<B, T> {
-    children: Vec<Element<B>>,
+pub struct Top {
+
+}
+
+pub struct Left {
+    pub library: IndexedBlock<Library>,
+    pub playlists: IndexedBlock<Playlists>
+}
+
+pub struct Centre {
+    pub left_chunk: Chunk<Left>,
+}
+
+pub struct Bottom {
+
+}
+
+pub struct Chunk<T> {
     show: bool,
-    _location: PhantomData<T>,
+    inner: T,
 }
 
-impl<B: Backend + Send, T> Chunk<B, T> {
-    fn new(children: Vec<Element<B>>) -> Result<Self> {
+impl Chunk<Top> {
+    async fn new() -> Result<Self> {
         Ok(Self {
-            children,
             show: true,
-            _location: PhantomData,
+            inner: Top {}
         })
     }
-
-    fn render_children(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
-        for child in &self.children {
-            child.render(f, state, layout_chunk);
-        }
-    }
 }
 
-impl<B: Backend + Send> Render<B> for Chunk<B, Top> {
+impl<B: Backend + Send> Render<B> for Chunk<Top> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
@@ -67,7 +70,19 @@ impl<B: Backend + Send> Render<B> for Chunk<B, Top> {
     }
 }
 
-impl<B: 'static + Backend + Send> Render<B> for Chunk<B, Left> {
+impl Chunk<Left> {
+    async fn new(client: &Client) -> Result<Self> {
+        Ok(Self {
+            show: true,
+            inner: Left {
+                library: IndexedBlock::<Library>::new().await?,
+                playlists: IndexedBlock::<Playlists>::new(client).await?
+            }
+        })
+    }
+}
+
+impl<B: 'static + Backend + Send> Render<B> for Chunk<Left> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
@@ -79,13 +94,25 @@ impl<B: 'static + Backend + Send> Render<B> for Chunk<B, Left> {
                 .split(layout_chunk);
 
 
-            state.blocks.library.render(f, state, chunks[0]);
-            state.blocks.playlists.render(f, state, chunks[1]);
+            self.inner.library.render(f, state, chunks[0]);
+            self.inner.playlists.render(f, state, chunks[1]);
         }
     }
 }
 
-impl<B: Backend + Send> Render<B> for Chunk<B, Centre> {
+impl Chunk<Centre> {
+    async fn new(client: &Client) -> Result<Self> {
+        Ok(Self {
+            show: true,
+            inner: Centre {
+                left_chunk: Chunk::<Left>::new(client).await?,
+            }
+        })
+    }
+}
+
+
+impl<B: 'static + Backend + Send> Render<B> for Chunk<Centre> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
@@ -93,13 +120,22 @@ impl<B: Backend + Send> Render<B> for Chunk<B, Centre> {
                 .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
                 .split(layout_chunk);
 
-            self.render_children(f, state, chunks[0]);
+            self.inner.left_chunk.render(f, state, chunks[0]);
             // state.blocks.main.render(f, state, chunks[1]);
         }
     }
 }
 
-impl<B: Backend + Send> Render<B> for Chunk<B, Bottom> {
+impl Chunk<Bottom> {
+    async fn new() -> Result<Self> {
+        Ok(Self {
+            show: true,
+            inner: Bottom {}
+        })
+    }
+}
+
+impl<B: Backend + Send> Render<B> for Chunk<Bottom> {
     fn render(&self, f: &mut Frame<B>, state: &State<B>, layout_chunk: Rect) {
         if self.show {
             let chunks = Layout::default()
