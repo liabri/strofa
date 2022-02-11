@@ -38,8 +38,8 @@ impl IndexedBlock<Library> {
 impl<B: Send + Backend> BlockTrait<B> for IndexedBlock<Library> {
     async fn active_event(state: &mut State<B>, key: Key) {
         match key {
-            Key::Up => state.blocks.library.index.dec(),
-            Key::Down => state.blocks.library.index.inc(),
+            Key::Up => state.chunks.centre.inner.left_chunk.inner.library.index.dec(),
+            Key::Down => state.chunks.centre.inner.left_chunk.inner.library.index.inc(),
             // Key::Enter => {
             //     let index = state.blocks.library.index.inner;
             //     let main_block = match state.blocks.library.entries[index] {
